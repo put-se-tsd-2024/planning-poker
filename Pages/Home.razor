@@ -1,7 +1,38 @@
 ﻿@page "/"
-
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+@* <h1>Hello, world!</h1>
 
-Welcome to your new app.
+Welcome to your new app. *@
+<div class="container">
+    <h1>Welcome to Planning Poker!</h1>
+    <input @bind="roomId" type="text" placeholder="Enter room id" />
+    <p id="errorMessage" style="color: red; display:none">Room id is required to join.</p>
+    <br />
+    <button @onclick="JoinRoom">Join room</button>
+    <br />
+    <button @onclick="CreateRoom">Create room</button>
+</div>
+
+@code {
+    private string roomId;
+
+    private async Task JoinRoom()
+    {
+        if (!string.IsNullOrWhiteSpace(roomId))
+        {
+            NavigationManager.NavigateTo("/room");
+        }
+        else
+        {
+            await JsRuntime.InvokeVoidAsync("eval", "document.getElementById('errorMessage').style.display = 'block';");
+            Console.WriteLine("Please fill in the room id.");
+        }
+    }
+    private void CreateRoom()
+    {
+        NavigationManager.NavigateTo("/room");
+    }
+}
