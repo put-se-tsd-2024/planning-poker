@@ -1,0 +1,12 @@
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\bin\Debug\net8.0\PlanningPoker.Shared.deps.json
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\bin\Debug\net8.0\PlanningPoker.Shared.dll
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\bin\Debug\net8.0\PlanningPoker.Shared.pdb
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\obj\Debug\net8.0\PlanningPoker.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\obj\Debug\net8.0\PlanningPoker.Shared.AssemblyInfoInputs.cache
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\obj\Debug\net8.0\PlanningPoker.Shared.AssemblyInfo.cs
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\obj\Debug\net8.0\PlanningPoker.Shared.csproj.CoreCompileInputs.cache
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\obj\Debug\net8.0\PlanningPoker.Shared.sourcelink.json
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\obj\Debug\net8.0\PlanningPoker.Shared.dll
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\obj\Debug\net8.0\refint\PlanningPoker.Shared.dll
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\obj\Debug\net8.0\PlanningPoker.Shared.pdb
+C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\obj\Debug\net8.0\ref\PlanningPoker.Shared.dll
