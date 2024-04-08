@@ -8,6 +8,6 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = PlanningPoker.Shared
-build_property.ProjectDir = C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Shared\
+build_property.ProjectDir = D:\Studia\2-Cycle\1-Semestr\TSD\Planning-poker\planning-poker-frontend\Shared\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 

@@ -1,0 +1,56 @@
+﻿@page "/"
+@using PlanningPoker.Client.Services
+@using PlanningPoker.Shared
+
+@inject NavigationManager NavigationManager
+@inject RoomStatusManager StatusManager
+@inject IJSRuntime JsRuntime
+<PageTitle>Home</PageTitle>
+
+
+<div class="container">
+    <h1>Welcome to Planning Poker!</h1>
+    <input  @bind="StatusManager.Room.Id" @bind:event="oninput" type="text" placeholder="Enter room id" />
+    <br />
+    <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name"/>
+    <br/>
+    <button type="button" class="btn btn-secondary" @onclick="() => JoinExistingRoom()" disabled="@(StatusManager.IsStatusReady==false)">Join Room</button>
+    <br />
+    <button type="button" class="btn btn-primary" @onclick="Start"  disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))" >Create Room</button>
+</div>
+
+
+
+@code {
+    private RoomType _roomType = RoomType.None;
+
+    private void InitNewRoom()
+    {
+        var random = new Random();
+
+        _roomType = RoomType.New;
+        StatusManager.Room.Id = random.Next(1000,9999).ToString();
+    }
+
+    private void JoinExistingRoom()
+    {
+        _roomType = RoomType.Existing;
+        NavigationManager.NavigateTo("/Room");
+        
+    }
+
+    private void Start()
+    {
+        var random = new Random();
+        _roomType = RoomType.New;
+        StatusManager.Room.Id = random.Next(1000,9999).ToString();
+        NavigationManager.NavigateTo("/Room");
+    }
+
+    private enum RoomType
+    {
+        None,
+        New,
+        Existing
+    }
+}

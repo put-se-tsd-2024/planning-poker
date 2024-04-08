@@ -9,19 +9,19 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = PlanningPoker.Server
 build_property.RootNamespace = PlanningPoker.Server
-build_property.ProjectDir = C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Server\
+build_property.ProjectDir = D:\Studia\2-Cycle\1-Semestr\TSD\Planning-poker\planning-poker-frontend\Server\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\Ivan.haidov\Downloads\PlanningPoker\PlanningPoker\Server
+build_property.MSBuildProjectDirectory = D:\Studia\2-Cycle\1-Semestr\TSD\Planning-poker\planning-poker-frontend\Server
 build_property._RazorSourceGeneratorDebug = 
 
-[C:/Users/Ivan.haidov/Downloads/PlanningPoker/PlanningPoker/Server/Pages/Error.cshtml]
+[D:/Studia/2-Cycle/1-Semestr/TSD/Planning-poker/planning-poker-frontend/Server/Pages/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXJyb3IuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ivan.haidov/Downloads/PlanningPoker/PlanningPoker/Server/Pages/Shared/_Layout.cshtml]
+[D:/Studia/2-Cycle/1-Semestr/TSD/Planning-poker/planning-poker-frontend/Server/Pages/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 

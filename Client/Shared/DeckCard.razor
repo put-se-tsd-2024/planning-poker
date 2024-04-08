@@ -1,0 +1,16 @@
+﻿@using PlanningPoker.Shared
+
+<button type="button" class="btn btn-secondary" @onclick="OnClicked">@Card.Text</button>
+
+@code {
+    [Parameter]
+    public Card Card { get; set; }
+
+    [Parameter]
+    public EventCallback<Card> OnCardClicked { get; set; }
+
+    private async Task OnClicked()
+    {
+        await OnCardClicked.InvokeAsync(Card);
+    }
+}

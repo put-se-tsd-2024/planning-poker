@@ -1,4 +1,4 @@
-html, body {
+﻿html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -100,4 +100,11 @@ a, .btn-link {
 
 code {
     color: #c02d76;
+}
+.card-deck{
+    display: flex!important;
+    flex-wrap: nowrap!important;
+    flex-direction: row!important;
+    gap: 10px!important;
+    justify-content: center!important;
 }
