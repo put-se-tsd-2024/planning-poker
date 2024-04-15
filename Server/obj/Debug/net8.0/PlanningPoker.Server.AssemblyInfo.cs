@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PlanningPoker.Server")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c04b1a17b9fa3adc2402be786b2bbc1168b6c92c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+12f532b3ab1d1d327ef255fa48217c246a7448fd")]
 [assembly: System.Reflection.AssemblyProductAttribute("PlanningPoker.Server")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PlanningPoker.Server")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
