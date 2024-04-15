@@ -1,4 +1,4 @@
-﻿@page "/Room"
+﻿@page "/Room/{RoomId}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using PlanningPoker.Client.Services
@@ -8,6 +8,10 @@
 @inject RoomStatusManager StatusManager
 @implements IDisposable
 
+@if (StatusManager.Player == null){
+    <h1>ADSKKLDKLASD</h1>
+}
+else{
 <div class="container">
     <div>Room Id:@StatusManager.Room.Id</div>
     <div class="card-deck">
@@ -52,10 +56,14 @@
         <br />
     }
 
-    <button class="btn btn-primary" @onclick="ResetRoom">Reset Room</button>
-</div>
+<button class="btn btn-primary" @onclick="ResetRoom">Reset Room</button>
+</div>}
 
 @code {
+
+    [Parameter]
+    public string RoomId { get; set; }    
+    
     private HubConnection _hubConnection;
     private IEnumerable<RoomPlay> _roomPlays = new List<RoomPlay>();
     private bool showEstimations = false;
@@ -63,10 +71,18 @@
 
     protected override async Task OnInitializedAsync()
     {
+        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
+        if (string.IsNullOrEmpty(RoomId))
+        {
+            NavigationManager.NavigateTo("/"); 
+            return;
+        }
+
         ValidateRoomState();
 
         _hubConnection = new HubConnectionBuilder()
-        .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub"))
+        @* .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub")) *@
+        .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
         .Build();
 
         _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
