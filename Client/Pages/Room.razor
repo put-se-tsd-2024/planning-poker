@@ -8,8 +8,13 @@
 @inject RoomStatusManager StatusManager
 @implements IDisposable
 
-@if (StatusManager.Player == null){
-    <h1>ADSKKLDKLASD</h1>
+@if (!Enter){
+    <div class="container">
+        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name"/>
+        <br/>
+        <button type="button" class="btn btn-secondary" @onclick="() => EnterRoom()" disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))">Enter Room</button>
+        <br />
+    </div>
 }
 else{
 <div class="container">
@@ -69,31 +74,46 @@ else{
     private bool showEstimations = false;
     private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
 
+    private bool Enter = true;
+
+    private async Task EnterRoom()
+    {
+        Enter = !Enter;
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
         if (string.IsNullOrEmpty(RoomId))
         {
             NavigationManager.NavigateTo("/"); 
             return;
         }
-
-        ValidateRoomState();
-
-        _hubConnection = new HubConnectionBuilder()
-        @* .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub")) *@
-        .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
-        .Build();
-
-        _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
+        
+        if (!StatusManager.IsStatusReady)
         {
-            _roomPlays = roomPlays;
-            StateHasChanged();
-        });
+            StatusManager.Room.Id = RoomId;
+            Enter=false;
+        }
+        if (!Enter)
+        {
+            @* ValidateRoomState(); *@
 
-        await _hubConnection.StartAsync();
+            _hubConnection = new HubConnectionBuilder()
+            @* .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub")) *@
+            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+            .Build();
 
-        await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+            _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
+            {
+                _roomPlays = roomPlays;
+                StateHasChanged();
+            });
+
+            await _hubConnection.StartAsync();
+
+            await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+       
+        }
     }
 
     private async Task PlayCardAsync(Card card)
