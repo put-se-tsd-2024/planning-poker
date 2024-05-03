@@ -1,4 +1,4 @@
-﻿@page "/Room"
+﻿@page "/Room/{RoomId}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using PlanningPoker.Client.Services
@@ -8,64 +8,86 @@
 @inject RoomStatusManager StatusManager
 @implements IDisposable
 
-<div class="container">
-<div>Room Id:@StatusManager.Room.Id</div>
-<div class="card-deck">
-    @foreach (var card in FibonacciDeck.Deck.Cards)
-    {
-        <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
-    }
-</div>
-<br>
-@if (_roomPlays.Any())
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th scope="col">Player</th>
-                <th scope="col">Card Played</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var roomPlay in _roomPlays)
-            {
-            <tr>
-                <th scope="row">@roomPlay.Player.Name</th>
-                <td>
-                    @if (AllPlayersHavePlayed)
-                    {
-                        @roomPlay.CardPlayed.Text
-                    }
-                    else
-                    {
-                        @(roomPlay.HasPlayed ? "Voted" : "")
-                    }
-                </td>
-            </tr>
-            }
-        </tbody>
-    </table>
+@if (StatusManager.Player == null){
+    <h1>ADSKKLDKLASD</h1>
 }
+else{
+<div class="container">
+    <div>Room Id:@StatusManager.Room.Id</div>
+    <div class="card-deck">
+        @foreach (var card in FibonacciDeck.Deck.Cards)
+        {
+            <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
+        }
+    </div>
+    <br>
+    @if (_roomPlays.Any())
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Player</th>
+                    <th scope="col">Card Played</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var roomPlay in _roomPlays)
+                {
+                    <tr>
+                        <th scope="row">@roomPlay.Player.Name</th>
+                        <td>
+                            @if (showEstimations)
+                            {
+                                @roomPlay.CardPlayed.Text
+                            }
+                            else
+                            {
+                                @(roomPlay.HasPlayed ? "Voted" : "")
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <br />
+        <button class="btn @ButtonClass" @onclick="ToggleEstimationVisibility" disabled="@(!HasUserVoted)">
+            @EstimationButtonLabel
+        </button>
+        <br />
+    }
 
 <button class="btn btn-primary" @onclick="ResetRoom">Reset Room</button>
-</div>
+</div>}
+
 @code {
+
+    [Parameter]
+    public string RoomId { get; set; }    
+    
     private HubConnection _hubConnection;
     private IEnumerable<RoomPlay> _roomPlays = new List<RoomPlay>();
-    private bool AllPlayersHavePlayed = false;
+    private bool showEstimations = false;
+    private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
 
     protected override async Task OnInitializedAsync()
     {
+        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
+        if (string.IsNullOrEmpty(RoomId))
+        {
+            NavigationManager.NavigateTo("/"); 
+            return;
+        }
+
         ValidateRoomState();
 
         _hubConnection = new HubConnectionBuilder()
-        .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub"))
+        @* .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub")) *@
+        .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
         .Build();
 
         _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
         {
             _roomPlays = roomPlays;
-            AllPlayersHavePlayed = _roomPlays.All(gp => gp.HasPlayed);
             StateHasChanged();
         });
 
@@ -82,9 +104,19 @@
     private async Task ResetRoom()
     {
         await _hubConnection.SendAsync("ResetRoom", new ResetRoomRequest { Room = StatusManager.Room });
+        showEstimations = false; // Optionally reset the showEstimations on room reset
     }
 
-    private void ValidateRoomState() {
+    private void ToggleEstimationVisibility()
+    {
+        showEstimations = !showEstimations;
+    }
+
+    private string EstimationButtonLabel => showEstimations ? "Hide Estimations" : "Reveal Estimations";
+    private string ButtonClass => showEstimations ? "btn-warning" : "btn-secondary";
+
+    private void ValidateRoomState()
+    {
         if (!StatusManager.IsStatusReady)
         {
             NavigationManager.NavigateTo("/");

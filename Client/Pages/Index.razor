@@ -35,7 +35,7 @@
     private void JoinExistingRoom()
     {
         _roomType = RoomType.Existing;
-        NavigationManager.NavigateTo("/Room");
+        NavigationManager.NavigateTo("/Room/"+StatusManager.Room.Id);
         
     }
 
@@ -44,7 +44,7 @@
         var random = new Random();
         _roomType = RoomType.New;
         StatusManager.Room.Id = random.Next(1000,9999).ToString();
-        NavigationManager.NavigateTo("/Room");
+        NavigationManager.NavigateTo(StatusManager.GetRoomUrl(NavigationManager));  
     }
 
     private enum RoomType
