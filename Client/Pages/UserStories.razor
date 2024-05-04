@@ -1,0 +1,84 @@
+﻿@page "/UserStories/{RoomId}"
+
+@using Microsoft.AspNetCore.SignalR.Client
+@using PlanningPoker.Client.Services
+@using PlanningPoker.Shared
+
+@inject NavigationManager NavigationManager
+@inject RoomStatusManager StatusManager
+
+@if (StatusManager.Player == null)
+{
+    <h3>FJNSDKLF</h3>
+}
+else
+{
+    <div class="container">
+        <h3>User Stories</h3>
+        <div>Room Id:@StatusManager.Room.Id</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">User Story</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var userStory in userStories)
+                {
+                    <tr>
+                        <td>@userStory.Title</td>
+                        <td>
+                            <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id)">Edit</button>
+                            <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <button class="btn btn-success" @onclick="CreateUserStory">Create New User Story</button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string RoomId { get; set; } // is this gonna be safe? "?" if it's null
+
+    private List<UserStory> userStories = new List<UserStory>();
+
+
+    private void CreateUserStory()
+    {
+        NavigationManager.NavigateTo($"/UserStories/Create/{RoomId}");
+    }
+
+    private void EditUserStory(string userStoryId)
+    {
+        NavigationManager.NavigateTo($"/UserStories/Edit/{RoomId}/{userStoryId}");
+    }
+
+    private void DeleteUserStory(string userStoryId)
+    {
+            //To implement: delete logic
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        System.Diagnostics.Debug.WriteLine("asdasd " + RoomId);
+        if (string.IsNullOrEmpty(RoomId))
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        userStories = await GetUserStoriesAsync(RoomId);
+    }
+
+    private async Task<List<UserStory>> GetUserStoriesAsync(string roomId)
+    {
+        //To implement: get user stories logic -- connection to DB
+        return userStories;
+    }
+}
+

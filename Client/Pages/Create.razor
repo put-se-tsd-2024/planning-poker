@@ -1,0 +1,46 @@
+﻿@page "/UserStories/Create/{RoomId}"
+
+@using Microsoft.AspNetCore.SignalR.Client
+@using PlanningPoker.Client.Services
+@using PlanningPoker.Shared
+
+@inject NavigationManager NavigationManager
+@inject RoomStatusManager StatusManager
+
+@if (StatusManager.Player == null)
+{
+    <h3>DHJKAHDA</h3>
+}
+else
+{
+    <div class="container">
+        <h3>Create New User Story</h3>
+        <EditForm Model="NewUserStory" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="Title">Title:</label>
+                <InputText id="Title" class="form-control" @bind-Value="NewUserStory.Title" />
+            </div>
+
+            <div class="form-group">
+                <label for="Description">Description:</label>
+                <InputTextArea id="Description" class="form-control" @bind-Value="NewUserStory.Description" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+}
+@code {
+    [Parameter]
+    public string RoomId { get; set; }
+
+    private UserStory NewUserStory = new UserStory();
+
+    private async Task HandleValidSubmit()
+    {
+        //To implement: the logic to create a new user story
+    }
+}
