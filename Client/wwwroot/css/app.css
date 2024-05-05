@@ -9,7 +9,7 @@
     background-color: #252221;
     padding: 40px;
     border-radius: 10px;
-    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+    box-shadow: 0px 0px 5px 0px var(--emerald);
     max-width: unset;
     padding-inline: 13%;
 }
@@ -19,24 +19,34 @@
         padding-left: 50px;
         padding-right: 50px;
     }
+
 .main-container {
     background-color: var(--jet);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: calc(100vh - 80px);
     text-align: center;
     max-width: unset;
 }
 
 .header {
     background-color: var(--raisin-black);
+    height: 80px;
+}
+
+.logo {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
 }
 
 html, body {
     font-family: Verdana, sans-serif;
     color: var(--pearl);
+    height: 100%;
+    margin: 0;
 }
 
 .container h1 {
