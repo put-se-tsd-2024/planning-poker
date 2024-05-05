@@ -1,15 +1,23 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using PlanningPoker.Server.Data;
 using PlanningPoker.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 
 namespace PlanningPoker.Server.Hubs
 {
     public class RoomHub : Hub
     {
+        private readonly MyDbContext _context;
         private static List<RoomPlay> _roomPlays = new List<RoomPlay>();
+
+        public RoomHub(MyDbContext context)
+        {
+            _context = context;
+        }
 
         public async Task RegisterPlayerAsync(RegisterPlayerRequest registerPlayerRequest)
         {
@@ -72,6 +80,14 @@ namespace PlanningPoker.Server.Hubs
 
             await Clients.Group(roomId).SendAsync("UpdateRoom", roomsPlaysForThisRoom);
         }
+
+        public async Task CreateUserStoryAsync(UserStory userStory)
+        {
+            // Add the user story to the database
+            _context.UserStories.Add(userStory);
+            await _context.SaveChangesAsync();
+        }
+
 
     }
 }
