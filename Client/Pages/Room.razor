@@ -1,4 +1,4 @@
-﻿@page "/Room/{RoomId}"
+@page "/Room/{RoomId}"
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using PlanningPoker.Client.Services
@@ -12,9 +12,11 @@
     <h1>ADSKKLDKLASD</h1>
 }
 else{
-<div class="container">
-    <div>Room Id:@StatusManager.Room.Id</div>
-    
+
+<div class="container room">
+    <h2>Room ID:@StatusManager.Room.Id</h2>
+    <p class="link" @onclick="CopyText">Copy invitation link</p>
+  
     <div class="user-stories">
             @if (userStories == null || userStories.Count == 0)
             {
@@ -44,13 +46,13 @@ else{
                 </table>
             }
         </div>
-
+  
     <div class="card-deck">
         @foreach (var card in FibonacciDeck.Deck.Cards)
         {
             <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
         }
-    </div>
+  </div>
     <br>
     @if (_roomPlays.Any())
     {
@@ -67,7 +69,7 @@ else{
                     <tr>
                         <th scope="row">@roomPlay.Player.Name</th>
                         <td>
-                            @if (showEstimations)
+                                @if (showEstimations || AllVoted)
                             {
                                 @roomPlay.CardPlayed.Text
                             }
@@ -87,9 +89,8 @@ else{
         <br />
     }
 
-<button class="btn btn-primary" @onclick="ResetRoom">Reset Room</button>
-<br /><br />
 <button class="btn btn-primary" @onclick="NavigateToUserStories">Manage User Stories</button>
+<button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
 </div>}
 
 @code {
@@ -104,19 +105,21 @@ else{
 
     private List<UserStory> userStories;
 
-    protected override async Task OnInitializedAsync()
-    {
-        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
-        if (string.IsNullOrEmpty(RoomId))
-        {
-            NavigationManager.NavigateTo("/"); 
-            return;
-        }
+    private bool AllVoted => _roomPlays.All(rp =>  rp.HasPlayed);
 
+    private bool Enter = true;
+
+    private void EnterRoom()
+    {
+        Enter = !Enter;
+        OnConnect();
+    } 
+      
+    private async Task OnConnect()
+    {
         ValidateRoomState();
 
         _hubConnection = new HubConnectionBuilder()
-        @* .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub")) *@
         .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
         .Build();
 
@@ -131,6 +134,26 @@ else{
         await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
         userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
     }
+
+    protected override async Task OnInitializedAsync()
+    {
+        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
+        if (string.IsNullOrEmpty(RoomId))
+        {
+            NavigationManager.NavigateTo("/"); 
+            return;
+        }
+        if (!StatusManager.IsStatusReady)
+        {
+            StatusManager.Room.Id = RoomId;
+            Enter=false;
+        }
+        if (Enter)
+        {
+            OnConnect();
+        }
+    }  
+    
 
     private async Task PlayCardAsync(Card card)
     {
@@ -148,12 +171,14 @@ else{
         NavigationManager.NavigateTo($"/UserStories/{RoomId}");
     }
 
-    private void ToggleEstimationVisibility()
+      
+ 
+    private async Task ShowRoomEstimations()
     {
-        showEstimations = !showEstimations;
+        await _hubConnection.SendAsync("ShowRoomEstimations", new ShowEstimationsRequest { Room = StatusManager.Room });
     }
 
-    private string EstimationButtonLabel => showEstimations ? "Hide Estimations" : "Reveal Estimations";
+    private string EstimationButtonLabel => showEstimations && HasUserVoted ? "Hide Estimations" : "Reveal Estimations";
     private string ButtonClass => showEstimations ? "btn-warning" : "btn-secondary";
 
     private void ValidateRoomState()

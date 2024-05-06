@@ -1,6 +1,15 @@
-﻿@inherits LayoutComponentBase
-<div class="main">
-    <div class="container-fluid">
+@inherits LayoutComponentBase
+<head>
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico">
+</head>
+
+<div class="header">
+    <a href="/">
+        <img src="logo.svg" alt="Logo" class="logo" />
+    </a>
+</div>
+<div class="main-container">
+    <main>
         @Body
-    </div>
+    </main>
 </div>
