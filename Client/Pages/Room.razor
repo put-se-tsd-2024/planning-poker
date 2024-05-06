@@ -69,7 +69,7 @@ else{
 
     [Parameter]
     public string RoomId { get; set; }    
-    
+
     private HubConnection _hubConnection;
     private IEnumerable<RoomPlay> _roomPlays = new List<RoomPlay>();
     private bool showEstimations = false;
@@ -130,6 +130,7 @@ else{
     {
         await _hubConnection.SendAsync("ResetRoom", new ResetRoomRequest { Room = StatusManager.Room });
         showEstimations = false; // Optionally reset the showEstimations on room reset
+        
     }
 
     private void ToggleEstimationVisibility()
@@ -137,8 +138,8 @@ else{
         showEstimations = !showEstimations;
     }
 
-    private string EstimationButtonLabel => showEstimations ? "Hide Estimations" : "Reveal Estimations";
-    private string ButtonClass => showEstimations ? "btn-warning" : "btn-secondary";
+    private string EstimationButtonLabel => showEstimations && HasUserVoted ? "Hide Estimations" : "Reveal Estimations";
+    private string ButtonClass => "btn-secondary";
 
     private void ValidateRoomState()
     {
