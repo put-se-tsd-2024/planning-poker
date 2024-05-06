@@ -17,7 +17,7 @@
     </div>
 }
 else{
-<div class="container">
+<div class="container room">
     <div>Room Id:@StatusManager.Room.Id</div>
     <button @onclick="CopyText">Copy invitation link</button>
     <div class="card-deck">
@@ -62,7 +62,7 @@ else{
         <br />
     }
 
-<button class="btn btn-primary" @onclick="ResetRoom">Reset Room</button>
+        <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
 </div>}
 
 @code {
@@ -104,12 +104,12 @@ else{
 
     protected override async Task OnInitializedAsync()
     {
+        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
         if (string.IsNullOrEmpty(RoomId))
         {
             NavigationManager.NavigateTo("/"); 
             return;
         }
-        
         if (!StatusManager.IsStatusReady)
         {
             StatusManager.Room.Id = RoomId;
