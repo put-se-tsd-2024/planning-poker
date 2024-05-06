@@ -18,8 +18,8 @@
 }
 else{
 <div class="container room">
-    <div>Room Id:@StatusManager.Room.Id</div>
-    <button @onclick="CopyText">Copy invitation link</button>
+    <h2>Room ID:@StatusManager.Room.Id</h2>
+    <p class="link" @onclick="CopyText">Copy invitation link</p>
     <div class="card-deck">
         @foreach (var card in FibonacciDeck.Deck.Cards)
         {

@@ -168,3 +168,14 @@ code {
     gap: 10px!important;
     justify-content: center!important;
 }
+
+.link {
+    color: var(--emerald);
+    margin-bottom: 50px;
+    text-decoration: underline; /* Add underline to the text */
+    cursor: pointer; /* Change cursor to pointer on hover */
+}
+
+    .link:hover {
+        color: var(--spring-green); /* Change color on hover */
+    }
