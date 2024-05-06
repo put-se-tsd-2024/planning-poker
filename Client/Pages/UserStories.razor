@@ -19,7 +19,8 @@ else
         <table class="table">
             <thead>
                 <tr>
-                    <th scope="col">User Story</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Description</th>
                     <th scope="col">Actions</th>
                 </tr>
             </thead>
@@ -28,9 +29,10 @@ else
                 {
                     <tr>
                         <td>@userStory.Title</td>
+                        <td>@userStory.Description</td>
                         <td>
-                            <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id)">Edit</button>
-                            <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id)">Delete</button>
+                            <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
+                            <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id.ToString())">Delete</button>
                         </td>
                     </tr>
                 }
@@ -47,6 +49,7 @@ else
 
     private List<UserStory> userStories = new List<UserStory>();
 
+    private HubConnection hubConnection;
 
     private void CreateUserStory()
     {
@@ -59,10 +62,11 @@ else
         NavigationManager.NavigateTo($"/UserStories/Edit/{RoomId}/{userStoryId}");
     }
 
-    private void DeleteUserStory(string userStoryId)
+    private async Task DeleteUserStory(string userStoryId) //to edit: nothing happens after click the delete button
     {
-            //To implement: delete logic
+        await hubConnection.InvokeAsync("DeleteUserStoryAsync", int.Parse(userStoryId));
     }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,13 +77,12 @@ else
             return;
         }
 
-        userStories = await GetUserStoriesAsync(RoomId);
-    }
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/roomHub"))
+            .Build();
 
-    private async Task<List<UserStory>> GetUserStoriesAsync(string roomId)
-    {
-        //To implement: get user stories logic -- connection to DB
-        return userStories;
+        await hubConnection.StartAsync();
+
+        userStories = await hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
     }
 }
-

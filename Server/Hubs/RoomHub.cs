@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using PlanningPoker.Server.Data;
 using PlanningPoker.Shared;
 using System;
@@ -83,9 +84,26 @@ namespace PlanningPoker.Server.Hubs
 
         public async Task CreateUserStoryAsync(UserStory userStory)
         {
-            // Add the user story to the database
             _context.UserStories.Add(userStory);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<UserStory>> GetUserStoriesAsync(string roomId)
+        {
+            return await _context.UserStories.Where(us => us.RoomId == roomId).ToListAsync();
+        }
+
+        public async Task DeleteUserStoryAsync(int userStoryId)
+        {
+            var userStory = await _context.UserStories.FindAsync(userStoryId);
+            if (userStory != null)
+            {
+                _context.UserStories.Remove(userStory);
+                await _context.SaveChangesAsync();
+
+                // Notify all clients in the room that a user story has been deleted
+                await Clients.Group(userStory.RoomId).SendAsync("UserStoryDeleted", userStoryId);
+            }
         }
 
 

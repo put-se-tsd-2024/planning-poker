@@ -23,10 +23,16 @@ namespace PlanningPoker.Server.Migrations
 
             modelBuilder.Entity("PlanningPoker.Shared.UserStory", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RoomId")
                         .HasColumnType("text");
 
                     b.Property<string>("Title")

@@ -38,11 +38,13 @@ else
     [Parameter]
     public string RoomId { get; set; }
 
-    private UserStory NewUserStory = new UserStory();
+    private UserStory NewUserStory;
     private HubConnection hubConnection;
 
     protected override async Task OnInitializedAsync()
     {
+        NewUserStory = new UserStory { RoomId = RoomId };
+
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/roomHub"))
             .Build();
@@ -50,24 +52,10 @@ else
         await hubConnection.StartAsync();
     }
 
-    /*private async Task HandleValidSubmit()
-    {
-        try
-        {
-            await hubConnection.InvokeAsync("CreateUserStoryAsync", new UserStory { Id = "1", Title = "1", Description ="1" });
-            NavigationManager.NavigateTo($"/UserStories/{RoomId}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred: {ex.Message}");
-        }
-    }*/
     private async Task HandleValidSubmit()
     {
         try
         {
-            // Remove the Id property before passing the object
-            //NewUserStory.Id = "12"; // Or set it to default value if needed
             await hubConnection.InvokeAsync("CreateUserStoryAsync", NewUserStory);
             NavigationManager.NavigateTo($"/UserStories/{RoomId}");
         }
@@ -76,5 +64,4 @@ else
             Console.WriteLine($"An error occurred: {ex.Message}");
         }
     }
-
 }
