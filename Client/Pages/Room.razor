@@ -56,7 +56,7 @@ else{
             </tbody>
         </table>
         <br />
-        <button class="btn @ButtonClass" @onclick="ToggleEstimationVisibility" disabled="@(!HasUserVoted)">
+        <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
             @EstimationButtonLabel
         </button>
         <br />
@@ -72,7 +72,7 @@ else{
 
     private HubConnection _hubConnection;
     private IEnumerable<RoomPlay> _roomPlays = new List<RoomPlay>();
-    private bool showEstimations = false;
+    private bool showEstimations => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.ShowEstimations);
     private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
 
     private bool Enter = true;
@@ -129,13 +129,11 @@ else{
     private async Task ResetRoom()
     {
         await _hubConnection.SendAsync("ResetRoom", new ResetRoomRequest { Room = StatusManager.Room });
-        showEstimations = false; // Optionally reset the showEstimations on room reset
-        
     }
 
-    private void ToggleEstimationVisibility()
+    private async Task ShowRoomEstimations()
     {
-        showEstimations = !showEstimations;
+        await _hubConnection.SendAsync("ShowRoomEstimations", new ShowEstimationsRequest { Room = StatusManager.Room });
     }
 
     private string EstimationButtonLabel => showEstimations && HasUserVoted ? "Hide Estimations" : "Reveal Estimations";
