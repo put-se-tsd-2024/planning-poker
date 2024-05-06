@@ -7,19 +7,13 @@
 @inject NavigationManager NavigationManager
 @inject RoomStatusManager StatusManager
 @implements IDisposable
-@inject IJSRuntime JSRuntime
-@if (!Enter){
-    <div class="container">
-        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name"/>
-        <br/>
-        <button type="button" class="btn btn-secondary" @onclick="() => EnterRoom()" disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))">Enter Room</button>
-        <br />
-    </div>
+
+@if (StatusManager.Player == null){
+    <h1>ADSKKLDKLASD</h1>
 }
 else{
-<div class="container room">
+<div class="container">
     <div>Room Id:@StatusManager.Room.Id</div>
-
     
     <div class="user-stories">
             @if (userStories == null || userStories.Count == 0)
@@ -50,8 +44,6 @@ else{
                 </table>
             }
         </div>
-
-    <button @onclick="CopyText">Copy invitation link</button>
 
     <div class="card-deck">
         @foreach (var card in FibonacciDeck.Deck.Cards)
@@ -89,50 +81,42 @@ else{
             </tbody>
         </table>
         <br />
-        <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
+        <button class="btn @ButtonClass" @onclick="ToggleEstimationVisibility" disabled="@(!HasUserVoted)">
             @EstimationButtonLabel
         </button>
         <br />
     }
 
-
 <button class="btn btn-primary" @onclick="ResetRoom">Reset Room</button>
 <br /><br />
 <button class="btn btn-primary" @onclick="NavigateToUserStories">Manage User Stories</button>
-
-        <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
-
 </div>}
 
 @code {
 
     [Parameter]
     public string RoomId { get; set; }    
-
+    
     private HubConnection _hubConnection;
     private IEnumerable<RoomPlay> _roomPlays = new List<RoomPlay>();
-    private bool showEstimations => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.ShowEstimations);
+    private bool showEstimations = false;
     private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
-
 
     private List<UserStory> userStories;
 
     protected override async Task OnInitializedAsync()
-
-    private bool Enter = true;
-
-    private void EnterRoom()
-
     {
-        Enter = !Enter;
-        OnConnect();
-    }    
+        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
+        if (string.IsNullOrEmpty(RoomId))
+        {
+            NavigationManager.NavigateTo("/"); 
+            return;
+        }
 
-    private async Task OnConnect()
-    {
         ValidateRoomState();
 
         _hubConnection = new HubConnectionBuilder()
+        @* .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub")) *@
         .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
         .Build();
 
@@ -148,25 +132,6 @@ else{
         userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
     }
 
-    protected override async Task OnInitializedAsync()
-    {
-        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
-        if (string.IsNullOrEmpty(RoomId))
-        {
-            NavigationManager.NavigateTo("/"); 
-            return;
-        }
-        if (!StatusManager.IsStatusReady)
-        {
-            StatusManager.Room.Id = RoomId;
-            Enter=false;
-        }
-        if (Enter)
-        {
-            OnConnect();
-        }
-    }
-
     private async Task PlayCardAsync(Card card)
     {
         await _hubConnection.SendAsync("PlayCardAsync", new PlayCardRequest { CardPlayed = card });
@@ -175,8 +140,8 @@ else{
     private async Task ResetRoom()
     {
         await _hubConnection.SendAsync("ResetRoom", new ResetRoomRequest { Room = StatusManager.Room });
+        showEstimations = false; // Optionally reset the showEstimations on room reset
     }
-
 
     private void NavigateToUserStories()
     {
@@ -184,15 +149,12 @@ else{
     }
 
     private void ToggleEstimationVisibility()
-
-    private async Task ShowRoomEstimations()
-
     {
-        await _hubConnection.SendAsync("ShowRoomEstimations", new ShowEstimationsRequest { Room = StatusManager.Room });
+        showEstimations = !showEstimations;
     }
 
-    private string EstimationButtonLabel => showEstimations && HasUserVoted ? "Hide Estimations" : "Reveal Estimations";
-    private string ButtonClass => "btn-secondary";
+    private string EstimationButtonLabel => showEstimations ? "Hide Estimations" : "Reveal Estimations";
+    private string ButtonClass => showEstimations ? "btn-warning" : "btn-secondary";
 
     private void ValidateRoomState()
     {
@@ -205,10 +167,5 @@ else{
     public void Dispose()
     {
         _ = _hubConnection.DisposeAsync();
-    }
-
-    async Task CopyText()
-    {
-        await JSRuntime.InvokeVoidAsync("copyToClipboard", StatusManager.GetRoomUrl(NavigationManager));
     }
 }

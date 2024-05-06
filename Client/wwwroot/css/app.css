@@ -1,47 +1,5 @@
-﻿@import url('colors.css');
-
-.container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    background-color: #252221;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
-    max-width: unset;
-    padding-inline: 13%;
-}
-
-    .container.room {
-        padding-inline: 0;
-        padding-left: 50px;
-        padding-right: 50px;
-    }
-.main-container {
-    background-color: var(--jet);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    text-align: center;
-    max-width: unset;
-}
-
-.header {
-    background-color: var(--raisin-black);
-}
-
-html, body {
-    font-family: Verdana, sans-serif;
-    color: var(--pearl);
-}
-
-.container h1 {
-    padding-bottom: 40px;
-    font-weight: bold;
+﻿html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 h1:focus {
@@ -52,22 +10,14 @@ a, .btn-link {
     color: #0071c1;
 }
 
-.btn-primary.btn-spring-green {
-    color: #FFFFFF; /* Text color */
-    background-color: var(--emerald);
-    border-color: var(--emerald);
+.btn-primary {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
 }
 
-    .btn-primary.btn-spring-green:hover {
-        background-color: var(--spring-green);
-        border-color: var(--spring-green);
-    }
-
-.btn-primary.btn-spring-green[disabled],
-.btn-primary.btn-spring-green:disabled {
-    color: #FFFFFF; /* Text color */
-    background-color: #6c757d; /* Grey background color when disabled */
-    border-color: #6c757d; /* Grey border color when disabled */
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 .content {

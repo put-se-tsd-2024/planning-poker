@@ -10,16 +10,15 @@
 
 <div class="container">
     <h1>Welcome to Planning Poker!</h1>
-    <div class="input-group">
-        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Your Name" />
-        <button type="button" class="btn btn-primary btn-spring-green" @onclick="Start" disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))">Create Room</button>
-    </div>
+    <input  @bind="StatusManager.Room.Id" @bind:event="oninput" type="text" placeholder="Enter room id" />
     <br />
-    <div class="input-group">
-        <input @bind="StatusManager.Room.Id" @bind:event="oninput" class="form-control" type="text" placeholder="Room ID" />
-        <button type="button" class="btn btn-primary btn-spring-green" @onclick="() => JoinExistingRoom()" disabled="@(StatusManager.IsStatusReady==false)">Join Room</button>
-    </div>
+    <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name"/>
+    <br/>
+    <button type="button" class="btn btn-secondary" @onclick="() => JoinExistingRoom()" disabled="@(StatusManager.IsStatusReady==false)">Join Room</button>
+    <br />
+    <button type="button" class="btn btn-primary" @onclick="Start"  disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))" >Create Room</button>
 </div>
+
 
 
 @code {
