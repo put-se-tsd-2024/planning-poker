@@ -7,13 +7,19 @@
 @inject NavigationManager NavigationManager
 @inject RoomStatusManager StatusManager
 @implements IDisposable
-
-@if (StatusManager.Player == null){
-    <h1>ADSKKLDKLASD</h1>
+@inject IJSRuntime JSRuntime
+@if (!Enter){
+    <div class="container">
+        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name"/>
+        <br/>
+        <button type="button" class="btn btn-secondary" @onclick="() => EnterRoom()" disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))">Enter Room</button>
+        <br />
+    </div>
 }
 else{
 <div class="container room">
     <div>Room Id:@StatusManager.Room.Id</div>
+    <button @onclick="CopyText">Copy invitation link</button>
     <div class="card-deck">
         @foreach (var card in FibonacciDeck.Deck.Cards)
         {
@@ -69,19 +75,19 @@ else{
     private bool showEstimations = false;
     private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
 
-    protected override async Task OnInitializedAsync()
-    {
-        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
-        if (string.IsNullOrEmpty(RoomId))
-        {
-            NavigationManager.NavigateTo("/"); 
-            return;
-        }
+    private bool Enter = true;
 
+    private void EnterRoom()
+    {
+        Enter = !Enter;
+        OnConnect();
+    }    
+
+    private async Task OnConnect()
+    {
         ValidateRoomState();
 
         _hubConnection = new HubConnectionBuilder()
-        @* .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub")) *@
         .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
         .Build();
 
@@ -94,6 +100,25 @@ else{
         await _hubConnection.StartAsync();
 
         await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
+        if (string.IsNullOrEmpty(RoomId))
+        {
+            NavigationManager.NavigateTo("/"); 
+            return;
+        }
+        if (!StatusManager.IsStatusReady)
+        {
+            StatusManager.Room.Id = RoomId;
+            Enter=false;
+        }
+        if (Enter)
+        {
+            OnConnect();
+        }
     }
 
     private async Task PlayCardAsync(Card card)
@@ -126,5 +151,10 @@ else{
     public void Dispose()
     {
         _ = _hubConnection.DisposeAsync();
+    }
+
+    async Task CopyText()
+    {
+        await JSRuntime.InvokeVoidAsync("copyToClipboard", StatusManager.GetRoomUrl(NavigationManager));
     }
 }
