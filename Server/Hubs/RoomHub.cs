@@ -58,6 +58,15 @@ namespace PlanningPoker.Server.Hubs
         {
             var roomsPlaysForThisRoom = _roomPlays.Where(gp => gp.Room.Id == resetRoomRequest.Room.Id).ToList();
             roomsPlaysForThisRoom.ForEach(gp => gp.CardPlayed = new Card());
+            roomsPlaysForThisRoom.ForEach(gp => gp.ShowEstimations = false);
+
+            await UpdateRoom(resetRoomRequest.Room.Id);
+        }
+
+        public async Task ShowRoomEstimations(ShowEstimationsRequest resetRoomRequest)
+        {
+            var roomsPlaysForThisRoom = _roomPlays.Where(gp => gp.Room.Id == resetRoomRequest.Room.Id).ToList();
+            roomsPlaysForThisRoom.ForEach(gp => gp.ShowEstimations = !gp.ShowEstimations);
 
             await UpdateRoom(resetRoomRequest.Room.Id);
         }
