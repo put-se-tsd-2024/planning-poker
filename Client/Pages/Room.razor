@@ -76,9 +76,29 @@ else{
 
     private bool Enter = true;
 
-    private async Task EnterRoom()
+    private void EnterRoom()
     {
         Enter = !Enter;
+        OnConnect();
+    }
+
+    private async Task OnConnect()
+    {
+        ValidateRoomState();
+
+        _hubConnection = new HubConnectionBuilder()
+        .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+        .Build();
+
+        _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
+        {
+            _roomPlays = roomPlays;
+            StateHasChanged();
+        });
+
+        await _hubConnection.StartAsync();
+
+        await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
     }
 
     protected override async Task OnInitializedAsync()
@@ -94,25 +114,9 @@ else{
             StatusManager.Room.Id = RoomId;
             Enter=false;
         }
-        if (!Enter)
+        if (Enter)
         {
-            @* ValidateRoomState(); *@
-
-            _hubConnection = new HubConnectionBuilder()
-            @* .WithUrl(NavigationManager.ToAbsoluteUri("/RoomHub")) *@
-            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
-            .Build();
-
-            _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
-            {
-                _roomPlays = roomPlays;
-                StateHasChanged();
-            });
-
-            await _hubConnection.StartAsync();
-
-            await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
-       
+            OnConnect();
         }
     }
 
