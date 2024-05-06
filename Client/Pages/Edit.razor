@@ -1,0 +1,95 @@
+﻿@page "/UserStories/Edit/{RoomId}/{UserStoryId}"
+
+@using Microsoft.AspNetCore.SignalR.Client
+@using PlanningPoker.Client.Services
+@using PlanningPoker.Shared
+
+@inject NavigationManager NavigationManager
+@inject RoomStatusManager StatusManager
+
+
+@if (UserStoryToEdit == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="container">
+        <h3>Edit User Story</h3>
+        <EditForm Model="UserStoryToEdit" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="Title">Title:</label>
+                <InputText id="Title" class="form-control" @bind-Value="UserStoryToEdit.Title" />
+            </div>
+
+            <div class="form-group">
+                <label for="Description">Description:</label>
+                <InputTextArea id="Description" class="form-control" @bind-Value="UserStoryToEdit.Description" />
+            </div>
+
+            <div class="form-group">
+                <label for="Tasks">Tasks:</label>
+                <InputTextArea id="Tasks" class="form-control" @bind-Value="UserStoryToEdit.Tasks" />
+            </div>
+
+            <div class="form-group">
+                <label for="AsignedTo">AsignedTo:</label>
+                <InputTextArea id="AsignedTo" class="form-control" @bind-Value="UserStoryToEdit.AsignedTo" />
+            </div>
+
+            <div class="form-group">
+                <label for="IsCompleted">IsCompleted:</label>
+                <InputTextArea id="IsCompleted" class="form-control" @bind-Value="UserStoryToEdit.IsCompleted" />
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </EditForm>
+    </div>
+}
+@code {
+    [Parameter]
+    public string RoomId { get; set; }
+
+    [Parameter]
+    public string UserStoryId { get; set; }
+
+    private HubConnection hubConnection;
+
+    private UserStory UserStoryToEdit;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(RoomId))
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+            .Build();
+
+        await hubConnection.StartAsync();
+        // Fetch the user story to edit from your SignalR hub
+        UserStoryToEdit = await GetUserStoryAsync(RoomId, UserStoryId);
+    }
+
+    private async Task<UserStory> GetUserStoryAsync(string roomId, string userStoryId)
+    {
+        // Use your SignalR hub to fetch the user story
+        var userStory = await hubConnection.InvokeAsync<UserStory>("GetUserStoryAsync", roomId, userStoryId);
+        return userStory;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        // Use your SignalR hub to update the user story
+        await hubConnection.InvokeAsync("UpdateUserStoryAsync", UserStoryToEdit);
+        // After updating the user story, navigate back to the list of user stories
+        NavigationManager.NavigateTo($"/UserStories/{RoomId}");
+    }
+}
+
+

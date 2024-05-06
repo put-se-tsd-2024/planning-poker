@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+using PlanningPoker.Server.Data;
 using PlanningPoker.Shared;
 using System;
 using System.Collections.Generic;
@@ -9,7 +11,13 @@ namespace PlanningPoker.Server.Hubs
 {
     public class RoomHub : Hub
     {
+        private readonly MyDbContext _context;
         private static List<RoomPlay> _roomPlays = new List<RoomPlay>();
+
+        public RoomHub(MyDbContext context)
+        {
+            _context = context;
+        }
 
         public async Task RegisterPlayerAsync(RegisterPlayerRequest registerPlayerRequest)
         {
@@ -81,6 +89,68 @@ namespace PlanningPoker.Server.Hubs
 
             await Clients.Group(roomId).SendAsync("UpdateRoom", roomsPlaysForThisRoom);
         }
-
+        public async Task CreateUserStoryAsync(UserStory userStory)
+        {
+            _context.UserStories.Add(userStory);
+            await _context.SaveChangesAsync();
+        }
+        public async Task<List<UserStory>> GetUserStoriesAsync(string roomId)
+        {
+            return await _context.UserStories.Where(us => us.RoomId == roomId).ToListAsync();
+        }
+        /*public async Task DeleteUserStoryAsync(int userStoryId)
+        {
+            var userStory = await _context.UserStories.FindAsync(userStoryId);
+            if (userStory != null)
+            {
+                _context.UserStories.Remove(userStory);
+                await _context.SaveChangesAsync();
+                // Notify all clients in the room that a user story has been deleted
+                await Clients.Group(userStory.RoomId).SendAsync("UserStoryDeleted", userStoryId);
+            }
+        }*/
+        public async Task DeleteUserStoryAsync(int userStoryId)
+        {
+            var userStory = await _context.UserStories.FindAsync(userStoryId);
+            if (userStory != null)
+            {
+                _context.UserStories.Remove(userStory);
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"Deleted user story: {userStoryId}");
+                // Notify all clients in the room that a user story has been deleted
+                await Clients.Group(userStory.RoomId).SendAsync("UserStoryDeleted", userStoryId);
+                Console.WriteLine($"Sent UserStoryDeleted event for user story: {userStoryId}");
+                Console.WriteLine($"room ID: {userStory.RoomId}");
+            }
+        }
+        public async Task<UserStory> GetUserStoryAsync(string roomId, string userStoryId)
+        {
+            // Convert the userStoryId to an int
+            int id = int.Parse(userStoryId);
+            // Fetch the user story from the database
+            var userStory = await _context.UserStories
+                .Where(us => us.RoomId == roomId && us.Id == id)
+                .FirstOrDefaultAsync();
+            return userStory;
+        }
+        public async Task UpdateUserStoryAsync(UserStory updatedUserStory)
+        {
+            // Fetch the user story from the database
+            var userStory = await _context.UserStories.FindAsync(updatedUserStory.Id);
+            if (userStory != null)
+            {
+                // Update the user story
+                userStory.Title = updatedUserStory.Title;
+                userStory.Description = updatedUserStory.Description;
+                userStory.Tasks = updatedUserStory.Tasks;
+                userStory.Description = updatedUserStory.Description;
+                userStory.AsignedTo = updatedUserStory.AsignedTo;
+                userStory.IsCompleted = updatedUserStory.IsCompleted;
+                // Save the changes to the database
+                await _context.SaveChangesAsync();
+                // Notify all clients in the room that a user story has been updated
+                await Clients.Group(userStory.RoomId).SendAsync("UserStoryUpdated", userStory);
+            }
+        }
     }
 }
