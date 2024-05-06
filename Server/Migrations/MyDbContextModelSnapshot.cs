@@ -29,10 +29,19 @@ namespace PlanningPoker.Server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AsignedTo")
+                        .HasColumnType("text");
+
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<string>("IsCompleted")
+                        .HasColumnType("text");
+
                     b.Property<string>("RoomId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Tasks")
                         .HasColumnType("text");
 
                     b.Property<string>("Title")

@@ -30,6 +30,21 @@ else
                 <InputTextArea id="Description" class="form-control" @bind-Value="NewUserStory.Description" />
             </div>
 
+            <div class="form-group">
+                <label for="Tasks">Tasks:</label>
+                <InputTextArea id="Tasks" class="form-control" @bind-Value="NewUserStory.Tasks" />
+            </div>
+
+            <div class="form-group">
+                <label for="AsignedTo">AsignedTo:</label>
+                <InputTextArea id="AsignedTo" class="form-control" @bind-Value="NewUserStory.AsignedTo" />
+            </div>
+
+            <div class="form-group">
+                <label for="IsCompleted">IsCompleted:</label>
+                <InputTextArea id="IsCompleted" class="form-control" @bind-Value="NewUserStory.IsCompleted" />
+            </div>
+
             <button type="submit" class="btn btn-primary">Create</button>
         </EditForm>
     </div>

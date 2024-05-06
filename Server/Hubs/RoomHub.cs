@@ -148,6 +148,10 @@ namespace PlanningPoker.Server.Hubs
                 // Update the user story
                 userStory.Title = updatedUserStory.Title;
                 userStory.Description = updatedUserStory.Description;
+                userStory.Tasks = updatedUserStory.Tasks;
+                userStory.Description = updatedUserStory.Description;
+                userStory.AsignedTo = updatedUserStory.AsignedTo;
+                userStory.IsCompleted = updatedUserStory.IsCompleted;
 
                 // Save the changes to the database
                 await _context.SaveChangesAsync();

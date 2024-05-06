@@ -11,7 +11,7 @@ using PlanningPoker.Server.Data;
 namespace PlanningPoker.Server.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    [Migration("20240506070551_CreateUserStoriesTable")]
+    [Migration("20240506181432_CreateUserStoriesTable")]
     partial class CreateUserStoriesTable
     {
         /// <inheritdoc />
@@ -32,10 +32,19 @@ namespace PlanningPoker.Server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AsignedTo")
+                        .HasColumnType("text");
+
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<string>("IsCompleted")
+                        .HasColumnType("text");
+
                     b.Property<string>("RoomId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Tasks")
                         .HasColumnType("text");
 
                     b.Property<string>("Title")

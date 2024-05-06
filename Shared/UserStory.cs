@@ -10,6 +10,9 @@ namespace PlanningPoker.Shared
         public string Title { get; set; }
         public string Description { get; set; }
 
-        // Other properties needed for the user story?
+        public string Tasks { get; set; }
+        public string AsignedTo { get; set; }
+        public string IsCompleted { get; set; }
+
     }
 }

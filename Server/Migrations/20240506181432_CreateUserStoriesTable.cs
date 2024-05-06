@@ -19,7 +19,10 @@ namespace PlanningPoker.Server.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RoomId = table.Column<string>(type: "text", nullable: true),
                     Title = table.Column<string>(type: "text", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true)
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Tasks = table.Column<string>(type: "text", nullable: true),
+                    AsignedTo = table.Column<string>(type: "text", nullable: true),
+                    IsCompleted = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {

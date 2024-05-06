@@ -24,6 +24,9 @@ else
                 <tr>
                     <th scope="col">Title</th>
                     <th scope="col">Description</th>
+                    <th scope="col">Tasks</th>
+                    <th scope="col">Asigned To</th>
+                    <th scope="col">Status</th>
                     <th scope="col">Actions</th>
                 </tr>
             </thead>
@@ -33,6 +36,10 @@ else
                     <tr>
                         <td>@userStory.Title</td>
                         <td>@userStory.Description</td>
+                        <td>@userStory.Tasks</td>
+                        <td>@userStory.AsignedTo</td>
+                        <td>@userStory.IsCompleted</td>
+
                         <td>
                             <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
                             <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id.ToString())">Delete</button>
