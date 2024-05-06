@@ -1,0 +1,82 @@
+﻿@page "/UserStories/Create/{RoomId}"
+
+@using Microsoft.AspNetCore.SignalR.Client
+@using PlanningPoker.Client.Services
+@using PlanningPoker.Shared
+
+@inject NavigationManager NavigationManager
+@inject RoomStatusManager StatusManager
+
+
+@if (StatusManager.Player == null)
+{
+    <h3>DHJKAHDA</h3>
+}
+else
+{
+    <div class="container">
+        <h3>Create New User Story</h3>
+        <EditForm Model="NewUserStory" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="Title">Title:</label>
+                <InputText id="Title" class="form-control" @bind-Value="NewUserStory.Title" />
+            </div>
+
+            <div class="form-group">
+                <label for="Description">Description:</label>
+                <InputTextArea id="Description" class="form-control" @bind-Value="NewUserStory.Description" />
+            </div>
+
+            <div class="form-group">
+                <label for="Tasks">Tasks:</label>
+                <InputTextArea id="Tasks" class="form-control" @bind-Value="NewUserStory.Tasks" />
+            </div>
+
+            <div class="form-group">
+                <label for="AsignedTo">AsignedTo:</label>
+                <InputTextArea id="AsignedTo" class="form-control" @bind-Value="NewUserStory.AsignedTo" />
+            </div>
+
+            <div class="form-group">
+                <label for="IsCompleted">IsCompleted:</label>
+                <InputTextArea id="IsCompleted" class="form-control" @bind-Value="NewUserStory.IsCompleted" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+}
+@code {
+    [Parameter]
+    public string RoomId { get; set; }
+
+    private UserStory NewUserStory;
+    private HubConnection hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        NewUserStory = new UserStory { RoomId = RoomId };
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+            .Build();
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            await hubConnection.InvokeAsync("CreateUserStoryAsync", NewUserStory);
+            NavigationManager.NavigateTo($"/UserStories/{RoomId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }
+    }
+}

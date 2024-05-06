@@ -19,7 +19,40 @@
 else{
 <div class="container room">
     <div>Room Id:@StatusManager.Room.Id</div>
+
+    
+    <div class="user-stories">
+            @if (userStories == null || userStories.Count == 0)
+            {
+            }
+            else{
+                <h3>User Stories</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Title</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Tasks</th>
+                            <th scope="col">Assigned To</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var userStory in userStories)
+                        {
+                            <tr>
+                                <td>@userStory.Title</td>
+                                <td>@userStory.Description</td>
+                                <td>@userStory.Tasks</td>
+                                <td>@userStory.AsignedTo</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
     <button @onclick="CopyText">Copy invitation link</button>
+
     <div class="card-deck">
         @foreach (var card in FibonacciDeck.Deck.Cards)
         {
@@ -62,7 +95,13 @@ else{
         <br />
     }
 
+
+<button class="btn btn-primary" @onclick="ResetRoom">Reset Room</button>
+<br /><br />
+<button class="btn btn-primary" @onclick="NavigateToUserStories">Manage User Stories</button>
+
         <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
+
 </div>}
 
 @code {
@@ -75,9 +114,15 @@ else{
     private bool showEstimations => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.ShowEstimations);
     private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
 
+
+    private List<UserStory> userStories;
+
+    protected override async Task OnInitializedAsync()
+
     private bool Enter = true;
 
     private void EnterRoom()
+
     {
         Enter = !Enter;
         OnConnect();
@@ -100,6 +145,7 @@ else{
         await _hubConnection.StartAsync();
 
         await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+        userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
     }
 
     protected override async Task OnInitializedAsync()
@@ -131,7 +177,16 @@ else{
         await _hubConnection.SendAsync("ResetRoom", new ResetRoomRequest { Room = StatusManager.Room });
     }
 
+
+    private void NavigateToUserStories()
+    {
+        NavigationManager.NavigateTo($"/UserStories/{RoomId}");
+    }
+
+    private void ToggleEstimationVisibility()
+
     private async Task ShowRoomEstimations()
+
     {
         await _hubConnection.SendAsync("ShowRoomEstimations", new ShowEstimationsRequest { Room = StatusManager.Room });
     }
