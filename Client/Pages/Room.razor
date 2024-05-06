@@ -7,7 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject RoomStatusManager StatusManager
 @implements IDisposable
-
+@inject IJSRuntime JSRuntime
 @if (!Enter){
     <div class="container">
         <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name"/>
@@ -19,6 +19,7 @@
 else{
 <div class="container">
     <div>Room Id:@StatusManager.Room.Id</div>
+    <button @onclick="CopyText">Copy invitation link</button>
     <div class="card-deck">
         @foreach (var card in FibonacciDeck.Deck.Cards)
         {
@@ -80,7 +81,7 @@ else{
     {
         Enter = !Enter;
         OnConnect();
-    }
+    }    
 
     private async Task OnConnect()
     {
@@ -150,5 +151,10 @@ else{
     public void Dispose()
     {
         _ = _hubConnection.DisposeAsync();
+    }
+
+    async Task CopyText()
+    {
+        await JSRuntime.InvokeVoidAsync("copyToClipboard", StatusManager.GetRoomUrl(NavigationManager));
     }
 }
