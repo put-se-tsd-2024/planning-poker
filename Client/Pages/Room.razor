@@ -42,7 +42,7 @@ else{
                     <tr>
                         <th scope="row">@roomPlay.Player.Name</th>
                         <td>
-                            @if (showEstimations)
+                                @if (showEstimations || AllVoted)
                             {
                                 @roomPlay.CardPlayed.Text
                             }
@@ -74,6 +74,7 @@ else{
     private IEnumerable<RoomPlay> _roomPlays = new List<RoomPlay>();
     private bool showEstimations => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.ShowEstimations);
     private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
+    private bool AllVoted => _roomPlays.All(rp =>  rp.HasPlayed);
 
     private bool Enter = true;
 
