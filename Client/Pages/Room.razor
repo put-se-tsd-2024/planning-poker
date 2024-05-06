@@ -14,6 +14,33 @@
 else{
 <div class="container">
     <div>Room Id:@StatusManager.Room.Id</div>
+    
+    <div class="user-stories">
+            @if (userStories == null || userStories.Count == 0)
+            {
+            }
+            else{
+                <h3>User Stories</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Title</th>
+                            <th scope="col">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var userStory in userStories)
+                        {
+                            <tr>
+                                <td>@userStory.Title</td>
+                                <td>@userStory.Description</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
     <div class="card-deck">
         @foreach (var card in FibonacciDeck.Deck.Cards)
         {
@@ -71,6 +98,8 @@ else{
     private bool showEstimations = false;
     private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
 
+    private List<UserStory> userStories;
+
     protected override async Task OnInitializedAsync()
     {
         System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
@@ -96,6 +125,7 @@ else{
         await _hubConnection.StartAsync();
 
         await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+        userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
     }
 
     private async Task PlayCardAsync(Card card)

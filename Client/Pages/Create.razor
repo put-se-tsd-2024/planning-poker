@@ -46,7 +46,7 @@ else
         NewUserStory = new UserStory { RoomId = RoomId };
 
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri("/roomHub"))
+            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
             .Build();
 
         await hubConnection.StartAsync();

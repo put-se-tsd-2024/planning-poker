@@ -8,9 +8,9 @@
 @inject RoomStatusManager StatusManager
 
 
-@if (StatusManager.Player == null)
+@if (UserStoryToEdit == null)
 {
-    <h3>FSADFSDG</h3>
+    <p>Loading...</p>
 }
 else
 {
@@ -41,22 +41,41 @@ else
     [Parameter]
     public string UserStoryId { get; set; }
 
+    private HubConnection hubConnection;
+
     private UserStory UserStoryToEdit;
 
     protected override async Task OnInitializedAsync()
     {
-        // Fetch the user story to edit from your API or database
+        if (string.IsNullOrEmpty(RoomId))
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+            .Build();
+
+        await hubConnection.StartAsync();
+        // Fetch the user story to edit from your SignalR hub
         UserStoryToEdit = await GetUserStoryAsync(RoomId, UserStoryId);
     }
 
     private async Task<UserStory> GetUserStoryAsync(string roomId, string userStoryId)
     {
-        //To implement: logic to fetch the user story from your API or database
-        return null; //To change
+        // Use your SignalR hub to fetch the user story
+        var userStory = await hubConnection.InvokeAsync<UserStory>("GetUserStoryAsync", roomId, userStoryId);
+        return userStory;
     }
 
     private async Task HandleValidSubmit()
     {
-       //To implement: logic to save the changes to the user story
+        // Use your SignalR hub to update the user story
+        await hubConnection.InvokeAsync("UpdateUserStoryAsync", UserStoryToEdit);
+        // After updating the user story, navigate back to the list of user stories
+        NavigationManager.NavigateTo($"/UserStories/{RoomId}");
     }
 }
+
+

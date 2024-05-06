@@ -6,6 +6,9 @@
 
 @inject NavigationManager NavigationManager
 @inject RoomStatusManager StatusManager
+@inject IJSRuntime JsRuntime
+
+@implements IDisposable
 
 @if (StatusManager.Player == null)
 {
@@ -40,6 +43,8 @@ else
         </table>
 
         <button class="btn btn-success" @onclick="CreateUserStory">Create New User Story</button>
+        <br />
+        <button class="btn btn-primary" @onclick="NavigateToRoom">Back to Room</button>
     </div>
 }
 
@@ -53,7 +58,6 @@ else
 
     private void CreateUserStory()
     {
-        Console.WriteLine("redirect to Creating user story");
         NavigationManager.NavigateTo($"/UserStories/Create/{RoomId}");
     }
 
@@ -61,6 +65,12 @@ else
     {
         NavigationManager.NavigateTo($"/UserStories/Edit/{RoomId}/{userStoryId}");
     }
+
+    private void NavigateToRoom()
+    {
+        NavigationManager.NavigateTo($"/Room/{RoomId}");
+    }
+
 
     private async Task DeleteUserStory(string userStoryId) //to edit: nothing happens after click the delete button
     {
@@ -78,11 +88,27 @@ else
         }
 
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri("/roomHub"))
+            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
             .Build();
 
         await hubConnection.StartAsync();
+        hubConnection.On<int>("UserStoryDeleted", HandleUserStoryDeleted);
 
         userStories = await hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
+    }
+
+
+    private void HandleUserStoryDeleted(int userStoryId)
+    {
+        JsRuntime.InvokeVoidAsync("console.log", "Received UserStoryDeleted event for user story:", userStoryId);
+        userStories.RemoveAll(us => us.Id == userStoryId);
+        StateHasChanged(); // Notify Blazor that the state has changed and the UI needs to be updated
+    }
+
+
+
+    public void Dispose()
+    {
+        _ = hubConnection.DisposeAsync();
     }
 }
