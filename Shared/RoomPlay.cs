@@ -7,5 +7,7 @@
         public Player Player { get; set; }
         public Card CardPlayed { get; set; }
         public bool HasPlayed => string.IsNullOrWhiteSpace(CardPlayed.Value) == false;
+        public bool ShowEstimations { get; set; }
+
     }
 }
