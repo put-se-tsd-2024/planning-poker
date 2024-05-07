@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using PlanningPoker.Client.Services
 @using PlanningPoker.Shared
+@using System.Text
 
 @inject NavigationManager NavigationManager
 @inject RoomStatusManager StatusManager
@@ -42,6 +43,7 @@ else
 
                         <td>
                             <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
+                            <button class="btn btn-primary" @onclick="() => ExportUserStory(userStory)">Export</button>
                             <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id.ToString())">Delete</button>
                         </td>
                     </tr>
@@ -71,6 +73,18 @@ else
     private void EditUserStory(string userStoryId)
     {
         NavigationManager.NavigateTo($"/UserStories/Edit/{RoomId}/{userStoryId}");
+    }
+
+private async Task ExportUserStory(UserStory userStory)
+    {
+        var csvContent = new StringBuilder();
+        csvContent.AppendLine("Title,Description,Tasks,Assignee,Status");
+        csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{userStory.Tasks}\",\"{userStory.AsignedTo}\",\"{userStory.IsCompleted}\"");
+
+        var buffer = Encoding.UTF8.GetBytes(csvContent.ToString());
+        var fileName = "user_story.csv";
+
+        await JsRuntime.InvokeVoidAsync("BlazorDownloadFile.saveAsFile", fileName, Convert.ToBase64String(buffer));
     }
 
     private void NavigateToRoom()
