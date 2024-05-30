@@ -93,22 +93,17 @@ namespace PlanningPoker.Server.Hubs
         {
             _context.UserStories.Add(userStory);
             await _context.SaveChangesAsync();
+            // Notify all clients in the room that a new user story has been created
+            await Clients.Group(userStory.RoomId).SendAsync("UserStoryCreated", userStory);
+            await UpdateRoom(userStory.RoomId); // Optional if UpdateRoom impacts the state
         }
+
+
         public async Task<List<UserStory>> GetUserStoriesAsync(string roomId)
         {
             return await _context.UserStories.Where(us => us.RoomId == roomId).ToListAsync();
         }
-        /*public async Task DeleteUserStoryAsync(int userStoryId)
-        {
-            var userStory = await _context.UserStories.FindAsync(userStoryId);
-            if (userStory != null)
-            {
-                _context.UserStories.Remove(userStory);
-                await _context.SaveChangesAsync();
-                // Notify all clients in the room that a user story has been deleted
-                await Clients.Group(userStory.RoomId).SendAsync("UserStoryDeleted", userStoryId);
-            }
-        }*/
+
         public async Task DeleteUserStoryAsync(int userStoryId)
         {
             var userStory = await _context.UserStories.FindAsync(userStoryId);
@@ -116,13 +111,12 @@ namespace PlanningPoker.Server.Hubs
             {
                 _context.UserStories.Remove(userStory);
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"Deleted user story: {userStoryId}");
                 // Notify all clients in the room that a user story has been deleted
                 await Clients.Group(userStory.RoomId).SendAsync("UserStoryDeleted", userStoryId);
-                Console.WriteLine($"Sent UserStoryDeleted event for user story: {userStoryId}");
-                Console.WriteLine($"room ID: {userStory.RoomId}");
+                await UpdateRoom(userStory.RoomId); // Optional if UpdateRoom impacts the state
             }
         }
+
         public async Task<UserStory> GetUserStoryAsync(string roomId, string userStoryId)
         {
             // Convert the userStoryId to an int
@@ -135,22 +129,20 @@ namespace PlanningPoker.Server.Hubs
         }
         public async Task UpdateUserStoryAsync(UserStory updatedUserStory)
         {
-            // Fetch the user story from the database
             var userStory = await _context.UserStories.FindAsync(updatedUserStory.Id);
             if (userStory != null)
             {
-                // Update the user story
                 userStory.Title = updatedUserStory.Title;
                 userStory.Description = updatedUserStory.Description;
                 userStory.Tasks = updatedUserStory.Tasks;
-                userStory.Description = updatedUserStory.Description;
                 userStory.AsignedTo = updatedUserStory.AsignedTo;
                 userStory.IsCompleted = updatedUserStory.IsCompleted;
-                // Save the changes to the database
                 await _context.SaveChangesAsync();
                 // Notify all clients in the room that a user story has been updated
                 await Clients.Group(userStory.RoomId).SendAsync("UserStoryUpdated", userStory);
+                await UpdateRoom(userStory.RoomId); // Optional if UpdateRoom impacts the state
             }
         }
+
     }
 }

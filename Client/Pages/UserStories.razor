@@ -13,7 +13,7 @@
 
 @if (StatusManager.Player == null)
 {
-    <h3>FJNSDKLF</h3>
+    <h3>Loading...</h3>
 }
 else
 {
@@ -26,7 +26,7 @@ else
                     <th scope="col">Title</th>
                     <th scope="col">Description</th>
                     <th scope="col">Tasks</th>
-                    <th scope="col">Asigned To</th>
+                    <th scope="col">Assigned To</th>
                     <th scope="col">Status</th>
                     <th scope="col">Actions</th>
                 </tr>
@@ -40,7 +40,6 @@ else
                         <td>@userStory.Tasks</td>
                         <td>@userStory.AsignedTo</td>
                         <td>@userStory.IsCompleted</td>
-
                         <td>
                             <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
                             <button class="btn btn-primary" @onclick="() => ExportUserStory(userStory)">Export</button>
@@ -59,10 +58,9 @@ else
 
 @code {
     [Parameter]
-    public string RoomId { get; set; } // is this gonna be safe? "?" if it's null
+    public string RoomId { get; set; }
 
     private List<UserStory> userStories = new List<UserStory>();
-
     private HubConnection hubConnection;
 
     private void CreateUserStory()
@@ -75,7 +73,7 @@ else
         NavigationManager.NavigateTo($"/UserStories/Edit/{RoomId}/{userStoryId}");
     }
 
-private async Task ExportUserStory(UserStory userStory)
+    private async Task ExportUserStory(UserStory userStory)
     {
         var csvContent = new StringBuilder();
         csvContent.AppendLine("Title,Description,Tasks,Assignee,Status");
@@ -92,16 +90,16 @@ private async Task ExportUserStory(UserStory userStory)
         NavigationManager.NavigateTo($"/Room/{RoomId}");
     }
 
-
-    private async Task DeleteUserStory(string userStoryId) //to edit: nothing happens after click the delete button
+    private async Task DeleteUserStory(string userStoryId)
     {
         await hubConnection.InvokeAsync("DeleteUserStoryAsync", int.Parse(userStoryId));
+        userStories.RemoveAll(us => us.Id == int.Parse(userStoryId));
+        StateHasChanged();
     }
 
 
     protected override async Task OnInitializedAsync()
     {
-        System.Diagnostics.Debug.WriteLine("asdasd " + RoomId);
         if (string.IsNullOrEmpty(RoomId))
         {
             NavigationManager.NavigateTo("/");
@@ -112,21 +110,47 @@ private async Task ExportUserStory(UserStory userStory)
             .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
             .Build();
 
-        await hubConnection.StartAsync();
+        hubConnection.On<UserStory>("UserStoryCreated", HandleUserStoryCreated);
         hubConnection.On<int>("UserStoryDeleted", HandleUserStoryDeleted);
+        hubConnection.On<UserStory>("UserStoryUpdated", HandleUserStoryUpdated);
 
-        userStories = await hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
+        await hubConnection.StartAsync();
+
+        await LoadUserStoriesAsync();
     }
 
+    private async Task LoadUserStoriesAsync()
+    {
+        userStories = await hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
+        StateHasChanged();
+    }
+
+    private void HandleUserStoryCreated(UserStory userStory)
+    {
+        userStories.Add(userStory);
+        StateHasChanged();
+    }
 
     private void HandleUserStoryDeleted(int userStoryId)
     {
-        JsRuntime.InvokeVoidAsync("console.log", "Received UserStoryDeleted event for user story:", userStoryId);
-        userStories.RemoveAll(us => us.Id == userStoryId);
-        StateHasChanged(); // Notify Blazor that the state has changed and the UI needs to be updated
+        var story = userStories.FirstOrDefault(us => us.Id == userStoryId);
+        if (story != null)
+        {
+            userStories.Remove(story);
+            StateHasChanged();
+        }
     }
 
-
+    private void HandleUserStoryUpdated(UserStory updatedUserStory)
+    {
+        var story = userStories.FirstOrDefault(us => us.Id == updatedUserStory.Id);
+        if (story != null)
+        {
+            var index = userStories.IndexOf(story);
+            userStories[index] = updatedUserStory;
+            StateHasChanged();
+        }
+    }
 
     public void Dispose()
     {
