@@ -8,22 +8,26 @@
 @inject RoomStatusManager StatusManager
 @implements IDisposable
 @inject IJSRuntime JSRuntime
-@if (!Enter){
+
+@if (!Enter)
+{
     <div class="container">
-        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name"/>
-        <br/>
+        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name" />
+        <br />
         <button type="button" class="btn btn-secondary" @onclick="() => EnterRoom()" disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))">Enter Room</button>
         <br />
     </div>
 }
-else{
-<div class="container room">
-    <h2>Room ID:@StatusManager.Room.Id</h2>
-    <p class="link" @onclick="CopyText">Copy invitation link</p>
+else
+{
+    <div class="container room">
+        <h2>Room ID:@StatusManager.Room.Id</h2>
+        <p class="link" @onclick="CopyText">Copy invitation link</p>
 
         <div class="user-stories">
             @if (userStories == null || userStories.Count == 0)
             {
+                <p>No user stories available.</p>
             }
             else
             {
@@ -52,81 +56,80 @@ else{
             }
         </div>
 
-    <div class="card-deck">
-        @foreach (var card in FibonacciDeck.Deck.Cards)
+        <div class="card-deck">
+            @foreach (var card in FibonacciDeck.Deck.Cards)
+            {
+                <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
+            }
+        </div>
+        <br>
+        @if (_roomPlays.Any())
         {
-            <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
-        }
-    </div>
-    <br>
-    @if (_roomPlays.Any())
-    {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Player</th>
-                    <th scope="col">Card Played</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var roomPlay in _roomPlays)
-                {
+            <table class="table">
+                <thead>
                     <tr>
-                        <th scope="row">@roomPlay.Player.Name</th>
-                        <td>
-                                @if (showEstimations || AllVoted)
-                            {
-                                @roomPlay.CardPlayed.Text
-                            }
-                            else
-                            {
-                                @(roomPlay.HasPlayed ? "Voted" : "")
-                            }
-                        </td>
+                        <th scope="col">Player</th>
+                        <th scope="col">Card Played</th>
                     </tr>
-                }
-            </tbody>
-        </table>
-        <br />
-        <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
-            @EstimationButtonLabel
-        </button>
-        <br />
-    }
+                </thead>
+                <tbody>
+                    @foreach (var roomPlay in _roomPlays)
+                    {
+                        <tr>
+                            <th scope="row">@roomPlay.Player.Name</th>
+                            <td>
+                                @if (showEstimations || AllVoted)
+                                {
+                                    @roomPlay.CardPlayed.Text
+                                }
+                                else
+                                {
+                                    @(roomPlay.HasPlayed ? "Voted" : "")
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <br />
+            <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
+                @EstimationButtonLabel
+            </button>
+            <br />
+        }
 
         <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
         <br /><br />
         <button class="btn btn-primary" @onclick="NavigateToUserStories">Manage User Stories</button>
-</div>}
+    </div>
+}
 
 @code {
-
     [Parameter]
-    public string RoomId { get; set; }    
+    public string RoomId { get; set; }
 
     private HubConnection _hubConnection;
     private IEnumerable<RoomPlay> _roomPlays = new List<RoomPlay>();
     private bool showEstimations => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.ShowEstimations);
     private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
-    private bool AllVoted => _roomPlays.All(rp =>  rp.HasPlayed);
+    private bool AllVoted => _roomPlays.All(rp => rp.HasPlayed);
 
-    private List<UserStory> userStories;
-    
+    private List<UserStory> userStories = new List<UserStory>();
     private bool Enter = true;
 
     private void EnterRoom()
     {
         Enter = !Enter;
         OnConnect();
-    }    
+    }
 
     private async Task OnConnect()
     {
         ValidateRoomState();
 
         _hubConnection = new HubConnectionBuilder()
-        .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
-        .Build();
+            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+            .Build();
 
         _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
         {
@@ -134,31 +137,55 @@ else{
             StateHasChanged();
         });
 
+        _hubConnection.On<UserStory>("UserStoryCreated", (userStory) =>
+        {
+            userStories.Add(userStory);
+            StateHasChanged();
+        });
+
+        _hubConnection.On<int>("UserStoryDeleted", (userStoryId) =>
+        {
+            userStories.RemoveAll(us => us.Id == userStoryId);
+            StateHasChanged();
+        });
+
+        _hubConnection.On<UserStory>("UserStoryUpdated", (updatedUserStory) =>
+        {
+            var index = userStories.FindIndex(us => us.Id == updatedUserStory.Id);
+            if (index >= 0)
+            {
+                userStories[index] = updatedUserStory;
+            }
+            StateHasChanged();
+        });
+
         await _hubConnection.StartAsync();
 
         await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+
+        userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
     }
 
     protected override async Task OnInitializedAsync()
     {
-        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
+        System.Diagnostics.Debug.WriteLine("asdasd " + RoomId);
         if (string.IsNullOrEmpty(RoomId))
         {
-            NavigationManager.NavigateTo("/"); 
+            NavigationManager.NavigateTo("/");
             return;
         }
         if (!StatusManager.IsStatusReady)
         {
             StatusManager.Room.Id = RoomId;
-            Enter=false;
+            Enter = false;
         }
         if (Enter)
         {
             ValidateRoomState();
 
             _hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
-            .Build();
+                .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+                .Build();
 
             _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
             {
@@ -166,9 +193,32 @@ else{
                 StateHasChanged();
             });
 
+            _hubConnection.On<UserStory>("UserStoryCreated", (userStory) =>
+            {
+                userStories.Add(userStory);
+                StateHasChanged();
+            });
+
+            _hubConnection.On<int>("UserStoryDeleted", (userStoryId) =>
+            {
+                userStories.RemoveAll(us => us.Id == userStoryId);
+                StateHasChanged();
+            });
+
+            _hubConnection.On<UserStory>("UserStoryUpdated", (updatedUserStory) =>
+            {
+                var index = userStories.FindIndex(us => us.Id == updatedUserStory.Id);
+                if (index >= 0)
+                {
+                    userStories[index] = updatedUserStory;
+                }
+                StateHasChanged();
+            });
+
             await _hubConnection.StartAsync();
 
             await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+
             userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
         }
     }
