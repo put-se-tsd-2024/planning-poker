@@ -258,7 +258,11 @@ code {
 
 .popup-buttons {
     display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
+    justify-content: center;
+    margin: 20px;
+}
+
+.popup-buttons button {
+    margin: 20px;
 }
 
