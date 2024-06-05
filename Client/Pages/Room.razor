@@ -31,30 +31,41 @@ else
             }
             else
             {
-                <h3>User Stories</h3>
-                <div class="user-stories-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th scope="col">Title</th>
-                                <th scope="col">Description</th>
-                                <th scope="col">Tasks</th>
-                                <th scope="col">Assigned To</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var userStory in userStories)
-                            {
-                                <tr>
-                                    <td>@userStory.Title</td>
-                                    <td>@userStory.Description</td>
-                                    <td>@userStory.Tasks</td>
-                                    <td>@userStory.AsignedTo</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                <h3>Select a User Story</h3>
+                <div class="dropdown-container">
+                    <select @onchange="SelectUserStory">
+                        <option value="">-- Select User Story--</option>
+                        @foreach (var userStory in userStories)
+                        {
+                            <option value="@userStory.Id">@userStory.Title</option>
+                        }
+                    </select>
                 </div>
+
+                @if (selectedUserStory != null)
+                {
+                    <h3>Selected User Story</h3>
+                    <div class="user-story-details">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Title</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Tasks</th>
+                                    <th scope="col">Assigned To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>@selectedUserStory.Title</td>
+                                    <td>@selectedUserStory.Description</td>
+                                    <td>@selectedUserStory.Tasks</td>
+                                    <td>@selectedUserStory.AsignedTo</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                }
             }
         </div>
 
@@ -117,6 +128,7 @@ else
     private bool AllVoted => _roomPlays.All(rp => rp.HasPlayed);
 
     private List<UserStory> userStories = new List<UserStory>();
+    private UserStory selectedUserStory;
     private bool Enter = true;
 
     private void EnterRoom()
@@ -223,6 +235,12 @@ else
 
             userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
         }
+    }
+
+    private void SelectUserStory(ChangeEventArgs e)
+    {
+        var selectedId = e.Value.ToString();
+        selectedUserStory = userStories.FirstOrDefault(us => us.Id.ToString() == selectedId);
     }
 
     private async Task PlayCardAsync(Card card)
