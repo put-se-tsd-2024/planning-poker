@@ -38,8 +38,14 @@ else
                         <tr>
                             <td>@userStory.Title</td>
                             <td>@userStory.Description</td>
-                            <td>@userStory.Tasks</td>
-                            <td>@userStory.AsignedTo</td>
+                            <td>
+                                @foreach (var work in userStory.Works)
+                                {
+                                    <div>@work.Title</div>
+                                    //<div>@work.Description</div>
+                                }
+                            </td>
+                            <td>@userStory.AssignedTo</td>
                             <td>@userStory.IsCompleted</td>
                             <td>
                                 <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
@@ -102,12 +108,16 @@ else
     private async Task ExportUserStories()
     {
         var csvContent = new StringBuilder();
-        csvContent.AppendLine("Title,Description,Tasks,Assignee,Status");
+        csvContent.AppendLine("Title,Description,WorkTitle,WorkDescription,WorkEstimation,Assignee,Status");
         foreach (var userStory in userStories)
         {
-            csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{userStory.Tasks}\",\"{userStory.AsignedTo}\",\"{userStory.IsCompleted}\"");
+            foreach (var work in userStory.Works)
+            {
+                csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{work.Title}\",\"{work.Description}\",\"{work.Estimation}\",\"{userStory.AssignedTo}\",\"{userStory.IsCompleted}\"");
+            }
         }
         
+                     
         var buffer = Encoding.UTF8.GetBytes(csvContent.ToString());
         var fileName = "user_story.csv";
 
@@ -159,8 +169,6 @@ else
                     {
                         Title = row[columnIndices["Podsumowanie"]],
                         Description = row[columnIndices["Opis"]],
-                        Tasks = "",
-                        AsignedTo = row[columnIndices["Osoba przypisana"]],
                         IsCompleted = row[columnIndices["Status"]],
                         RoomId = RoomId
                     };
@@ -189,7 +197,6 @@ else
         userStories.RemoveAll(us => us.Id == int.Parse(userStoryId));
         StateHasChanged();
     }
-
 
     protected override async Task OnInitializedAsync()
     {
