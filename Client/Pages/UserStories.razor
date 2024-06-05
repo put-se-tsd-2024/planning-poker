@@ -43,7 +43,7 @@ else
                             <td>@userStory.IsCompleted</td>
                             <td>
                                 <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
-                                <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id.ToString())">Delete</button>
+                                <button class="btn btn-danger" @onclick="() => ShowDeleteConfirmation(userStory.Id.ToString())">Delete</button>
                             </td>
                         </tr>
                     }
@@ -61,6 +61,8 @@ else
     </div>
 }
 
+<ConfirmationPopup @ref="confirmationPopup" Message="Are you sure you want to delete this user story?" OnConfirm="HandleDeleteConfirmation" />
+
 @code {
     [Parameter]
     public string RoomId { get; set; }
@@ -68,6 +70,8 @@ else
     private IBrowserFile uploadedFile;
     private List<UserStory> userStories = new List<UserStory>();
     private HubConnection hubConnection;
+    private ConfirmationPopup confirmationPopup;
+    private string userStoryIdToDelete;
 
     private void CreateUserStory()
     {
@@ -77,6 +81,22 @@ else
     private void EditUserStory(string userStoryId)
     {
         NavigationManager.NavigateTo($"/UserStories/Edit/{RoomId}/{userStoryId}");
+    }
+
+    private void ShowDeleteConfirmation(string userStoryId)
+    {
+        userStoryIdToDelete = userStoryId;
+        confirmationPopup.Show();
+    }
+
+    private async Task HandleDeleteConfirmation(bool isConfirmed)
+    {
+        if (isConfirmed)
+        {
+            await hubConnection.InvokeAsync("DeleteUserStoryAsync", int.Parse(userStoryIdToDelete));
+            userStories.RemoveAll(us => us.Id == int.Parse(userStoryIdToDelete));
+            StateHasChanged();
+        }
     }
 
     private async Task ExportUserStories()
