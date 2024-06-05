@@ -31,43 +31,52 @@ else
             }
             else
             {
-                <h3>User Stories</h3>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th scope="col">Title</th>
-                            <th scope="col">Task Title</th>
-                            <th scope="col">Description</th>
-                            <th scope="col">Estimation</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <h3>Select a User Story</h3>
+                <div class="dropdown-container">
+                    <select @onchange="SelectUserStory">
+                        <option value="">-- Select User Story--</option>
                         @foreach (var userStory in userStories)
                         {
-                            @foreach (var work in userStory.Works)
-                            {
-                                <tr>
-                                    <td>@userStory.Title</td>
-                                    <td>@work.Title</td>
-                                    <td>@work.Description</td>
-                                    <td>@work.Estimation</td>
-                                </tr>
-                            }
+                            <option value="@userStory.Id">@userStory.Title</option>
                         }
-                    </tbody>
-                </table>
+                    </select>
+                </div>
+      
+                @if (selectedUserStory != null)
+                {
+                  <h3>User Stories</h3>
+                  <table class="table">
+                      <thead>
+                          <tr>
+                              <th scope="col">Title</th>
+                              <th scope="col">Task Title</th>
+                              <th scope="col">Description</th>
+                              <th scope="col">Estimation</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          @foreach (var userStory in userStories)
+                          {
+                              @foreach (var work in userStory.Works)
+                              {
+                                  <tr>
+                                      <td>@userStory.Title</td>
+                                      <td>@work.Title</td>
+                                      <td>@work.Description</td>
+                                      <td>@work.Estimation</td>
+                                  </tr>
+                              }
+                          }
+                      </tbody>
+                  </table>
+                }
             }
         </div>
 
-        <div class="card-deck">
-            @foreach (var card in FibonacciDeck.Deck.Cards)
-            {
-                <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
-            }
-        </div>
         <br>
         @if (_roomPlays.Any())
         {
+            <h3>Players</h3>
             <table class="table">
                 <thead>
                     <tr>
@@ -94,15 +103,20 @@ else
                     }
                 </tbody>
             </table>
-            <br />
-            <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
-                @EstimationButtonLabel
-            </button>
-            <br />
         }
-
+        <div class="card-deck">
+            @foreach (var card in FibonacciDeck.Deck.Cards)
+            {
+                <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
+            }
+        </div>
+        <br />
+        <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
+            @EstimationButtonLabel
+        </button>
+        <br />
         <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
-        <br /><br />
+        <br />
         <button class="btn btn-primary" @onclick="NavigateToUserStories">Manage User Stories</button>
     </div>
 }
@@ -118,6 +132,7 @@ else
     private bool AllVoted => _roomPlays.All(rp => rp.HasPlayed);
 
     private List<UserStory> userStories = new List<UserStory>();
+    private UserStory selectedUserStory;
     private bool Enter = true;
 
     private void EnterRoom()
@@ -224,6 +239,12 @@ else
 
             userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
         }
+    }
+
+    private void SelectUserStory(ChangeEventArgs e)
+    {
+        var selectedId = e.Value.ToString();
+        selectedUserStory = userStories.FirstOrDefault(us => us.Id.ToString() == selectedId);
     }
 
     private async Task PlayCardAsync(Card card)
