@@ -49,7 +49,7 @@ else
                             <td>@userStory.IsCompleted</td>
                             <td>
                                 <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
-                                <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id.ToString())">Delete</button>
+                                <button class="btn btn-danger" @onclick="() => ShowDeleteConfirmation(userStory.Id.ToString())">Delete</button>
                             </td>
                         </tr>
                     }
@@ -67,6 +67,8 @@ else
     </div>
 }
 
+<ConfirmationPopup @ref="confirmationPopup" Message="Are you sure you want to delete this user story?" OnConfirm="HandleDeleteConfirmation" />
+
 @code {
     [Parameter]
     public string RoomId { get; set; }
@@ -74,6 +76,8 @@ else
     private IBrowserFile uploadedFile;
     private List<UserStory> userStories = new List<UserStory>();
     private HubConnection hubConnection;
+    private ConfirmationPopup confirmationPopup;
+    private string userStoryIdToDelete;
 
     private void CreateUserStory()
     {
@@ -83,6 +87,22 @@ else
     private void EditUserStory(string userStoryId)
     {
         NavigationManager.NavigateTo($"/UserStories/Edit/{RoomId}/{userStoryId}");
+    }
+
+    private void ShowDeleteConfirmation(string userStoryId)
+    {
+        userStoryIdToDelete = userStoryId;
+        confirmationPopup.Show();
+    }
+
+    private async Task HandleDeleteConfirmation(bool isConfirmed)
+    {
+        if (isConfirmed)
+        {
+            await hubConnection.InvokeAsync("DeleteUserStoryAsync", int.Parse(userStoryIdToDelete));
+            userStories.RemoveAll(us => us.Id == int.Parse(userStoryIdToDelete));
+            StateHasChanged();
+        }
     }
 
     private async Task ExportUserStories()
@@ -96,8 +116,8 @@ else
                 csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{work.Title}\",\"{work.Description}\",\"{work.Estimation}\",\"{userStory.AssignedTo}\",\"{userStory.IsCompleted}\"");
             }
         }
-        
-                     
+
+
         var buffer = Encoding.UTF8.GetBytes(csvContent.ToString());
         var fileName = "user_story.csv";
 
@@ -120,7 +140,7 @@ else
         using (var reader = new StreamReader(stream))
         {
             var content = await reader.ReadToEndAsync();
-            var lines = content.Split('\n');
+            var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
             if (lines.Length == 0)
             {
@@ -145,15 +165,38 @@ else
                 var row = line.Split(',');
                 if (row.Length < columns.Length) continue;
 
-                var userStory = new UserStory
+                var title = row[columnIndices["Title"]].Trim().Trim('"');
+                var description = row[columnIndices["Description"]].Trim().Trim('"');
+                var workTitle = row[columnIndices["WorkTitle"]].Trim().Trim('"');
+                var workDescription = row[columnIndices["WorkDescription"]].Trim().Trim('"');
+                var workEstimation = row[columnIndices["WorkEstimation"]].Trim().Trim('"');
+                var assignee = row[columnIndices["Assignee"]].Trim().Trim('"');
+                var status = row[columnIndices["Status"]].Trim().Trim('"');
+
+                var userStory = newStories.FirstOrDefault(us => us.Title == title && us.Description == description);
+                if (userStory == null)
+                {
+                    userStory = new UserStory
+                        {
+                            Title = title,
+                            Description = description,
+                            AssignedTo = assignee,
+                            IsCompleted = status,
+                            RoomId = RoomId,
+                            Works = new List<Work>()
+                        };
+
+                    newStories.Add(userStory);
+                }
+
+                var work = new Work
                     {
-                        Title = row[columnIndices["Podsumowanie"]],
-                        Description = row[columnIndices["Opis"]],
-                        IsCompleted = row[columnIndices["Status"]],
-                        RoomId = RoomId
+                        Title = workTitle,
+                        Description = workDescription,
+                        Estimation = workEstimation
                     };
 
-                newStories.Add(userStory);
+                userStory.Works.Add(work);
             }
 
             foreach (var userStory in newStories)
@@ -164,6 +207,7 @@ else
             await LoadUserStoriesAsync();
         }
     }
+
 
 
     private void NavigateToRoom()
