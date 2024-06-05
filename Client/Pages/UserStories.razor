@@ -24,21 +24,12 @@ else
             <table class="table">
                 <thead>
                     <tr>
-                        <td>@userStory.Title</td>
-                        <td>@userStory.Description</td>
-                        <td>
-                            @foreach (var work in userStory.Works)
-                            {
-                                <div>@work.Title</div>
-                                //<div>@work.Description</div>
-                            }
-                        </td>
-                        <td>@userStory.AssignedTo</td>
-                        <td>@userStory.IsCompleted</td>
-                        <td>
-                            <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
-                            <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id.ToString())">Delete</button>
-                        </td>
+                        <th scope="col">Title</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Tasks</th>
+                        <th scope="col">Assigned To</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,8 +38,14 @@ else
                         <tr>
                             <td>@userStory.Title</td>
                             <td>@userStory.Description</td>
-                            <td>@userStory.Tasks</td>
-                            <td>@userStory.AsignedTo</td>
+                            <td>
+                                @foreach (var work in userStory.Works)
+                                {
+                                    <div>@work.Title</div>
+                                    //<div>@work.Description</div>
+                                }
+                            </td>
+                            <td>@userStory.AssignedTo</td>
                             <td>@userStory.IsCompleted</td>
                             <td>
                                 <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
@@ -92,10 +89,14 @@ else
     {
         var csvContent = new StringBuilder();
         csvContent.AppendLine("Title,Description,WorkTitle,WorkDescription,WorkEstimation,Assignee,Status");
-        foreach (var work in userStory.Works)
+        foreach (var userStory in userStories)
         {
-            csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{work.Title}\",\"{work.Description}\",\"{work.Estimation}\",\"{userStory.AssignedTo}\",\"{userStory.IsCompleted}\"");
+            foreach (var work in userStory.Works)
+            {
+                csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{work.Title}\",\"{work.Description}\",\"{work.Estimation}\",\"{userStory.AssignedTo}\",\"{userStory.IsCompleted}\"");
+            }
         }
+        
                      
         var buffer = Encoding.UTF8.GetBytes(csvContent.ToString());
         var fileName = "user_story.csv";
@@ -148,8 +149,6 @@ else
                     {
                         Title = row[columnIndices["Podsumowanie"]],
                         Description = row[columnIndices["Opis"]],
-                        Tasks = "",
-                        AsignedTo = row[columnIndices["Osoba przypisana"]],
                         IsCompleted = row[columnIndices["Status"]],
                         RoomId = RoomId
                     };
