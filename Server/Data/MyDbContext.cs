@@ -13,9 +13,7 @@ namespace PlanningPoker.Server.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<UserStory>()
-                .HasMany(us => us.Works)
-                .WithOne(t => t.UserStory)
-                .HasForeignKey(t => t.UserStoryId);
+                .HasMany(us => us.Works);
 
             base.OnModelCreating(modelBuilder);
         }

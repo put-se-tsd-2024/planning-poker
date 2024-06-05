@@ -16,8 +16,5 @@ namespace PlanningPoker.Shared
         public string Title { get; set; }
         public string Description { get; set; }
         public string Estimation { get; set; }
-
-        [ForeignKey("UserStoryId")]
-        public UserStory UserStory { get; set; }
     }
 }
