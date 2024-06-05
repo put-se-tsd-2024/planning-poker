@@ -11,7 +11,7 @@ using PlanningPoker.Server.Data;
 namespace PlanningPoker.Server.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    [Migration("20240506214140_CreateUserStoriesTable")]
+    [Migration("20240605164227_CreateUserStoriesTable")]
     partial class CreateUserStoriesTable
     {
         /// <inheritdoc />
@@ -32,7 +32,7 @@ namespace PlanningPoker.Server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AsignedTo")
+                    b.Property<string>("AssignedTo")
                         .HasColumnType("text");
 
                     b.Property<string>("Description")
@@ -44,15 +44,55 @@ namespace PlanningPoker.Server.Migrations
                     b.Property<string>("RoomId")
                         .HasColumnType("text");
 
-                    b.Property<string>("Tasks")
-                        .HasColumnType("text");
-
                     b.Property<string>("Title")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.ToTable("UserStories");
+                });
+
+            modelBuilder.Entity("PlanningPoker.Shared.Work", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Estimation")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.Property<int>("UserStoryId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserStoryId");
+
+                    b.ToTable("Works");
+                });
+
+            modelBuilder.Entity("PlanningPoker.Shared.Work", b =>
+                {
+                    b.HasOne("PlanningPoker.Shared.UserStory", "UserStory")
+                        .WithMany("Works")
+                        .HasForeignKey("UserStoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserStory");
+                });
+
+            modelBuilder.Entity("PlanningPoker.Shared.UserStory", b =>
+                {
+                    b.Navigation("Works");
                 });
 #pragma warning restore 612, 618
         }

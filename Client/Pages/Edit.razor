@@ -7,7 +7,6 @@
 @inject NavigationManager NavigationManager
 @inject RoomStatusManager StatusManager
 
-
 @if (UserStoryToEdit == null)
 {
     <p>Loading...</p>
@@ -31,23 +30,38 @@ else
             </div>
 
             <div class="form-group">
-                <label for="Tasks">Tasks:</label>
-                <InputTextArea id="Tasks" class="form-control" @bind-Value="UserStoryToEdit.Tasks" />
-            </div>
-
-            <div class="form-group">
-                <label for="AsignedTo">AsignedTo:</label>
-                <InputTextArea id="AsignedTo" class="form-control" @bind-Value="UserStoryToEdit.AsignedTo" />
+                <label for="AssignedTo">AssignedTo:</label>
+                <InputText id="AssignedTo" class="form-control" @bind-Value="UserStoryToEdit.AssignedTo" />
             </div>
 
             <div class="form-group">
                 <label for="IsCompleted">IsCompleted:</label>
-                <InputTextArea id="IsCompleted" class="form-control" @bind-Value="UserStoryToEdit.IsCompleted" />
+                <InputText id="IsCompleted" class="form-control" @bind-Value="UserStoryToEdit.IsCompleted" />
             </div>
+
+            <h4>Works</h4>
+            @foreach (var work in UserStoryToEdit.Works)
+            {
+                <div class="form-group">
+                    <label>Work Title:</label>
+                    <InputText class="form-control" @bind-Value="work.Title" />
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <InputTextArea class="form-control" @bind-Value="work.Description" />
+                </div>
+                <div class="form-group">
+                    <label>Estimation:</label>
+                    <InputText class="form-control" @bind-Value="work.Estimation" />
+                </div>
+            }
+            <button type="button" class="btn btn-secondary" @onclick="AddWork">Add Task</button>
+
             <button type="submit" class="btn btn-primary">Save Changes</button>
         </EditForm>
     </div>
 }
+
 @code {
     [Parameter]
     public string RoomId { get; set; }
@@ -72,24 +86,23 @@ else
             .Build();
 
         await hubConnection.StartAsync();
-        // Fetch the user story to edit from your SignalR hub
         UserStoryToEdit = await GetUserStoryAsync(RoomId, UserStoryId);
     }
 
     private async Task<UserStory> GetUserStoryAsync(string roomId, string userStoryId)
     {
-        // Use your SignalR hub to fetch the user story
         var userStory = await hubConnection.InvokeAsync<UserStory>("GetUserStoryAsync", roomId, userStoryId);
         return userStory;
     }
 
+    private void AddWork()
+    {
+        UserStoryToEdit.Works.Add(new Work());
+    }
+
     private async Task HandleValidSubmit()
     {
-        // Use your SignalR hub to update the user story
         await hubConnection.InvokeAsync("UpdateUserStoryAsync", UserStoryToEdit);
-        // After updating the user story, navigate back to the list of user stories
         NavigationManager.NavigateTo($"/UserStories/{RoomId}");
     }
 }
-
-

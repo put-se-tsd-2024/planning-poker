@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using PlanningPoker.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using PlanningPoker.Server.Data;
+using System.Text.Json.Serialization;
 
 namespace PlanningPoker.Server
 {
@@ -27,7 +28,12 @@ namespace PlanningPoker.Server
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSignalR();
+            services.AddSignalR(options =>
+            {
+                options.MaximumReceiveMessageSize = 1024 * 1024 * 5; // Adjust limit as needed (in bytes)
+            });
+
+
             services.AddControllersWithViews();
             services.AddRazorPages();
             services.AddResponseCompression(opts =>

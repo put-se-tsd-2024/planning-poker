@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PlanningPoker.Shared
 {
@@ -10,9 +12,9 @@ namespace PlanningPoker.Shared
         public string Title { get; set; }
         public string Description { get; set; }
 
-        public string Tasks { get; set; }
-        public string AsignedTo { get; set; }
+        public string AssignedTo { get; set; }
         public string IsCompleted { get; set; }
 
+        public ICollection<Work> Works { get; set; }
     }
 }

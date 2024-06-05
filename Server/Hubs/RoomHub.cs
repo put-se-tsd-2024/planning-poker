@@ -41,7 +41,7 @@ namespace PlanningPoker.Server.Hubs
             await UpdateRoom(roomPlay.Room.Id);
         }
 
-        public async Task PlayCardAsync(PlayCardRequest playCardRequest) 
+        public async Task PlayCardAsync(PlayCardRequest playCardRequest)
         {
             var roomPlay = _roomPlays.FirstOrDefault(ga => ga.HubConnectionId == Context.ConnectionId);
 
@@ -53,7 +53,7 @@ namespace PlanningPoker.Server.Hubs
             await UpdateRoom(roomPlay.Room.Id);
         }
 
-        public async Task ResetRoom(ResetRoomRequest resetRoomRequest) 
+        public async Task ResetRoom(ResetRoomRequest resetRoomRequest)
         {
             var roomsPlaysForThisRoom = _roomPlays.Where(gp => gp.Room.Id == resetRoomRequest.Room.Id).ToList();
             roomsPlaysForThisRoom.ForEach(gp => gp.CardPlayed = new Card());
@@ -83,12 +83,13 @@ namespace PlanningPoker.Server.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        private async Task UpdateRoom(string roomId) 
+        private async Task UpdateRoom(string roomId)
         {
             var roomsPlaysForThisRoom = _roomPlays.Where(gp => gp.Room.Id == roomId).ToList();
 
             await Clients.Group(roomId).SendAsync("UpdateRoom", roomsPlaysForThisRoom);
         }
+
         public async Task CreateUserStoryAsync(UserStory userStory)
         {
             _context.UserStories.Add(userStory);
@@ -98,10 +99,12 @@ namespace PlanningPoker.Server.Hubs
             await UpdateRoom(userStory.RoomId); // Optional if UpdateRoom impacts the state
         }
 
-
         public async Task<List<UserStory>> GetUserStoriesAsync(string roomId)
         {
-            return await _context.UserStories.Where(us => us.RoomId == roomId).ToListAsync();
+            return await _context.UserStories
+                .Include(us => us.Works)
+                .Where(us => us.RoomId == roomId)
+                .ToListAsync();
         }
 
         public async Task DeleteUserStoryAsync(int userStoryId)
@@ -123,10 +126,12 @@ namespace PlanningPoker.Server.Hubs
             int id = int.Parse(userStoryId);
             // Fetch the user story from the database
             var userStory = await _context.UserStories
+                .Include(us => us.Works)
                 .Where(us => us.RoomId == roomId && us.Id == id)
                 .FirstOrDefaultAsync();
             return userStory;
         }
+
         public async Task UpdateUserStoryAsync(UserStory updatedUserStory)
         {
             var userStory = await _context.UserStories.FindAsync(updatedUserStory.Id);
@@ -134,8 +139,7 @@ namespace PlanningPoker.Server.Hubs
             {
                 userStory.Title = updatedUserStory.Title;
                 userStory.Description = updatedUserStory.Description;
-                userStory.Tasks = updatedUserStory.Tasks;
-                userStory.AsignedTo = updatedUserStory.AsignedTo;
+                userStory.Works = updatedUserStory.Works;
                 userStory.IsCompleted = updatedUserStory.IsCompleted;
                 await _context.SaveChangesAsync();
                 // Notify all clients in the room that a user story has been updated
@@ -143,6 +147,5 @@ namespace PlanningPoker.Server.Hubs
                 await UpdateRoom(userStory.RoomId); // Optional if UpdateRoom impacts the state
             }
         }
-
     }
 }
