@@ -25,7 +25,7 @@ else
                 <tr>
                     <th scope="col">Title</th>
                     <th scope="col">Description</th>
-                    <th scope="col">Works</th>
+                    <th scope="col">Tasks</th>
                     <th scope="col">Assigned To</th>
                     <th scope="col">Status</th>
                     <th scope="col">Actions</th>
@@ -41,7 +41,7 @@ else
                             @foreach (var work in userStory.Works)
                             {
                                 <div>@work.Title</div>
-                                <div>@work.Description</div>
+                                //<div>@work.Description</div>
                             }
                         </td>
                         <td>@userStory.AssignedTo</td>
