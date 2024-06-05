@@ -56,15 +56,10 @@ else
             }
         </div>
 
-        <div class="card-deck">
-            @foreach (var card in FibonacciDeck.Deck.Cards)
-            {
-                <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
-            }
-        </div>
         <br>
         @if (_roomPlays.Any())
         {
+            <h3>Players</h3>
             <table class="table">
                 <thead>
                     <tr>
@@ -91,15 +86,20 @@ else
                     }
                 </tbody>
             </table>
-            <br />
-            <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
-                @EstimationButtonLabel
-            </button>
-            <br />
         }
-
+        <div class="card-deck">
+            @foreach (var card in FibonacciDeck.Deck.Cards)
+            {
+                <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
+            }
+        </div>
+        <br />
+        <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
+            @EstimationButtonLabel
+        </button>
+        <br />
         <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
-        <br /><br />
+        <br />
         <button class="btn btn-primary" @onclick="NavigateToUserStories">Manage User Stories</button>
     </div>
 }
