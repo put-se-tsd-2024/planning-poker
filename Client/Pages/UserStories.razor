@@ -25,7 +25,7 @@ else
                 <tr>
                     <th scope="col">Title</th>
                     <th scope="col">Description</th>
-                    <th scope="col">Tasks</th>
+                    <th scope="col">Works</th>
                     <th scope="col">Assigned To</th>
                     <th scope="col">Status</th>
                     <th scope="col">Actions</th>
@@ -37,8 +37,14 @@ else
                     <tr>
                         <td>@userStory.Title</td>
                         <td>@userStory.Description</td>
-                        <td>@userStory.Tasks</td>
-                        <td>@userStory.AsignedTo</td>
+                        <td>
+                            @foreach (var work in userStory.Works)
+                            {
+                                <div>@work.Title</div>
+                                <div>@work.Description</div>
+                            }
+                        </td>
+                        <td>@userStory.AssignedTo</td>
                         <td>@userStory.IsCompleted</td>
                         <td>
                             <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
@@ -76,8 +82,11 @@ else
     private async Task ExportUserStory(UserStory userStory)
     {
         var csvContent = new StringBuilder();
-        csvContent.AppendLine("Title,Description,Tasks,Assignee,Status");
-        csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{userStory.Tasks}\",\"{userStory.AsignedTo}\",\"{userStory.IsCompleted}\"");
+        csvContent.AppendLine("Title,Description,WorkTitle,WorkDescription,WorkEstimation,Assignee,Status");
+        foreach (var work in userStory.Works)
+        {
+            csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{work.Title}\",\"{work.Description}\",\"{work.Estimation}\",\"{userStory.AssignedTo}\",\"{userStory.IsCompleted}\"");
+        }
 
         var buffer = Encoding.UTF8.GetBytes(csvContent.ToString());
         var fileName = "user_story.csv";
@@ -96,7 +105,6 @@ else
         userStories.RemoveAll(us => us.Id == int.Parse(userStoryId));
         StateHasChanged();
     }
-
 
     protected override async Task OnInitializedAsync()
     {

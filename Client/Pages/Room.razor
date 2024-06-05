@@ -44,12 +44,15 @@ else
                     <tbody>
                         @foreach (var userStory in userStories)
                         {
-                            <tr>
-                                <td>@userStory.Title</td>
-                                <td>@userStory.Description</td>
-                                <td>@userStory.Tasks</td>
-                                <td>@userStory.AsignedTo</td>
-                            </tr>
+                            @foreach (var work in userStory.Works)
+                            {
+                                <tr>
+                                    <td>@userStory.Title</td>
+                                    <td>@work.Title</td>
+                                    <td>@work.Description</td>
+                                    <td>@work.Estimation</td>
+                                </tr>
+                            }
                         }
                     </tbody>
                 </table>
