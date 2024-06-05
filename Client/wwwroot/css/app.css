@@ -179,3 +179,8 @@ code {
     .link:hover {
         color: var(--spring-green); /* Change color on hover */
     }
+
+.user-stories-container {
+    max-height: 400px; /* Set the height you want for the container */
+    overflow-y: auto; /* Enable vertical scrolling */
+}

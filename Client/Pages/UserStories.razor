@@ -20,36 +20,41 @@ else
     <div class="container">
         <h3>User Stories</h3>
         <div>Room Id:@StatusManager.Room.Id</div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Title</th>
-                    <th scope="col">Description</th>
-                    <th scope="col">Tasks</th>
-                    <th scope="col">Assigned To</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var userStory in userStories)
-                {
+        <div class="user-stories-container">
+            <table class="table">
+                <thead>
                     <tr>
-                        <td>@userStory.Title</td>
-                        <td>@userStory.Description</td>
-                        <td>@userStory.Tasks</td>
-                        <td>@userStory.AsignedTo</td>
-                        <td>@userStory.IsCompleted</td>
-                        <td>
-                            <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
-                            <button class="btn btn-primary" @onclick="() => ExportUserStory(userStory)">Export</button>
-                            <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id.ToString())">Delete</button>
-                        </td>
+                        <th scope="col">Title</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Tasks</th>
+                        <th scope="col">Assigned To</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var userStory in userStories)
+                    {
+                        <tr>
+                            <td>@userStory.Title</td>
+                            <td>@userStory.Description</td>
+                            <td>@userStory.Tasks</td>
+                            <td>@userStory.AsignedTo</td>
+                            <td>@userStory.IsCompleted</td>
+                            <td>
+                                <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
+                                <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id.ToString())">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
 
+        <button class="btn btn-primary" @onclick=ExportUserStories>Export</button>
+        <InputFile OnChange="HandleFileSelected" />
+        <button class="btn btn-success" @onclick="ImportUserStories">Import</button>
+        <br />
         <button class="btn btn-success" @onclick="CreateUserStory">Create New User Story</button>
         <br />
         <button class="btn btn-primary" @onclick="NavigateToRoom">Back to Room</button>
@@ -60,6 +65,7 @@ else
     [Parameter]
     public string RoomId { get; set; }
 
+    private IBrowserFile uploadedFile;
     private List<UserStory> userStories = new List<UserStory>();
     private HubConnection hubConnection;
 
@@ -73,17 +79,84 @@ else
         NavigationManager.NavigateTo($"/UserStories/Edit/{RoomId}/{userStoryId}");
     }
 
-    private async Task ExportUserStory(UserStory userStory)
+    private async Task ExportUserStories()
     {
         var csvContent = new StringBuilder();
         csvContent.AppendLine("Title,Description,Tasks,Assignee,Status");
-        csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{userStory.Tasks}\",\"{userStory.AsignedTo}\",\"{userStory.IsCompleted}\"");
-
+        foreach (var userStory in userStories)
+        {
+            csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{userStory.Tasks}\",\"{userStory.AsignedTo}\",\"{userStory.IsCompleted}\"");
+        }
+        
         var buffer = Encoding.UTF8.GetBytes(csvContent.ToString());
         var fileName = "user_story.csv";
 
         await JsRuntime.InvokeVoidAsync("BlazorDownloadFile.saveAsFile", fileName, Convert.ToBase64String(buffer));
     }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        uploadedFile = e.File;
+    }
+
+    private async Task ImportUserStories()
+    {
+        if (uploadedFile == null)
+        {
+            return;
+        }
+
+        using (var stream = uploadedFile.OpenReadStream())
+        using (var reader = new StreamReader(stream))
+        {
+            var content = await reader.ReadToEndAsync();
+            var lines = content.Split('\n');
+
+            if (lines.Length == 0)
+            {
+                return;
+            }
+
+            var header = lines[0];
+            var columns = header.Split(',');
+
+            var columnIndices = new Dictionary<string, int>();
+            for (int i = 0; i < columns.Length; i++)
+            {
+                columnIndices[columns[i].Trim().Trim('"')] = i;
+            }
+
+            var newStories = new List<UserStory>();
+
+            foreach (var line in lines.Skip(1)) // Skip header row
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                var row = line.Split(',');
+                if (row.Length < columns.Length) continue;
+
+                var userStory = new UserStory
+                    {
+                        Title = row[columnIndices["Podsumowanie"]],
+                        Description = row[columnIndices["Opis"]],
+                        Tasks = "",
+                        AsignedTo = row[columnIndices["Osoba przypisana"]],
+                        IsCompleted = row[columnIndices["Status"]],
+                        RoomId = RoomId
+                    };
+
+                newStories.Add(userStory);
+            }
+
+            foreach (var userStory in newStories)
+            {
+                await hubConnection.InvokeAsync("CreateUserStoryAsync", userStory);
+            }
+
+            await LoadUserStoriesAsync();
+        }
+    }
+
 
     private void NavigateToRoom()
     {
