@@ -32,27 +32,29 @@ else
             else
             {
                 <h3>User Stories</h3>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th scope="col">Title</th>
-                            <th scope="col">Description</th>
-                            <th scope="col">Tasks</th>
-                            <th scope="col">Assigned To</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var userStory in userStories)
-                        {
+                <div class="user-stories-container">
+                    <table class="table">
+                        <thead>
                             <tr>
-                                <td>@userStory.Title</td>
-                                <td>@userStory.Description</td>
-                                <td>@userStory.Tasks</td>
-                                <td>@userStory.AsignedTo</td>
+                                <th scope="col">Title</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Tasks</th>
+                                <th scope="col">Assigned To</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var userStory in userStories)
+                            {
+                                <tr>
+                                    <td>@userStory.Title</td>
+                                    <td>@userStory.Description</td>
+                                    <td>@userStory.Tasks</td>
+                                    <td>@userStory.AsignedTo</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
         </div>
 
