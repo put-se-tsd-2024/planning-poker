@@ -1,5 +1,22 @@
 ﻿@import url('colors.css');
 
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+.main-container {
+    background-color: var(--jet);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
 .container {
     display: flex;
     flex-direction: column;
@@ -10,7 +27,7 @@
     padding: 40px;
     border-radius: 10px;
     box-shadow: 0px 0px 5px 0px var(--emerald);
-    max-width: unset;
+    max-width: 100%;
     padding-inline: 13%;
 }
 
@@ -20,16 +37,6 @@
         padding-right: 50px;
     }
 
-.main-container {
-    background-color: var(--jet);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: calc(100vh - 80px);
-    text-align: center;
-    max-width: unset;
-}
 
 .header {
     background-color: var(--raisin-black);
@@ -181,39 +188,46 @@ code {
     }
 
 .user-stories-container {
-    max-height: 400px; /* Set the height you want for the container */
-    overflow-y: auto; /* Enable vertical scrolling */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%; /* Ensure it takes full width */
 }
 
 .dropdown-container {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     margin-bottom: 20px;
+    width: 100%;
+    max-width: 500px;
+    box-sizing: border-box;
 }
 
     .dropdown-container select {
-        background-color: var(--jet); /* Background color of the dropdown */
-        color: var(--pearl); /* Text color */
-        border: 2px solid var(--emerald); /* Border color */
-        padding: 10px;
+        background-color: var(--jet);
+        color: var(--pearl);
+        border: 2px solid var(--emerald);
+        padding: 5px;
         border-radius: 5px;
         font-size: 1rem;
         width: 100%;
-        max-width: 500px;
         text-align: center;
-        appearance: none; /* Remove default arrow */
-        -webkit-appearance: none; /* Remove default arrow for Safari */
-        -moz-appearance: none; /* Remove default arrow for Firefox */
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        box-sizing: border-box;
     }
 
         .dropdown-container select:hover {
-            border-color: var(--spring-green); /* Border color on hover */
+            border-color: var(--spring-green);
         }
 
         .dropdown-container select:focus {
             outline: none;
-            border-color: var(--spring-green); /* Border color on focus */
+            border-color: var(--spring-green);
         }
 
     .dropdown-container::after {
@@ -224,15 +238,11 @@ code {
         right: 15px;
         top: 50%;
         transform: translateY(-50%);
-        pointer-events: none; /* Make sure the arrow doesn't block clicks */
+        pointer-events: none;
     }
 
-.dropdown-container {
-    position: relative; /* Required for the custom arrow */
-}
-
     .dropdown-container select::-ms-expand {
-        display: none; /* Remove default arrow for Internet Explorer */
+        display: none;
     }
 
 .popup-container {
@@ -262,7 +272,7 @@ code {
     margin: 20px;
 }
 
-.popup-buttons button {
-    margin: 20px;
-}
+    .popup-buttons button {
+        margin: 20px;
+    }
 
