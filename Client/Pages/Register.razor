@@ -1,0 +1,34 @@
+﻿@page "/register"
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+
+@using PlanningPoker.Shared
+
+<EditForm Model="registerModel" OnValidSubmit="HandleRegistration">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <InputText id="email" @bind-Value="registerModel.Email" />
+    <InputText id="password" @bind-Value="registerModel.Password" />
+    <InputText id="name" @bind-Value="registerModel.Name" />
+    <InputText id="surname" @bind-Value="registerModel.Surname" />
+
+    <button type="submit">Register</button>
+</EditForm>
+
+@code {
+    private RegisterModel registerModel = new RegisterModel();
+
+    private async Task HandleRegistration()
+    {
+        var response = await Http.PostAsJsonAsync("api/account/register", registerModel);
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            // Handle errors
+        }
+    }
+}
