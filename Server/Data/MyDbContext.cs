@@ -1,14 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using PlanningPoker.Shared;
 using System;
 
 namespace PlanningPoker.Server.Data
 {
-    public class MyDbContext(DbContextOptions<MyDbContext> options) : DbContext(options)
+    public class MyDbContext : IdentityDbContext<User>
     {
+        public MyDbContext(DbContextOptions<MyDbContext> options)
+        : base(options)
+        {
+        }
+
         public DbSet<UserStory> UserStories { get; set; }
         public DbSet<Work> Works { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -17,5 +24,6 @@ namespace PlanningPoker.Server.Data
 
             base.OnModelCreating(modelBuilder);
         }
+
     }
 }
