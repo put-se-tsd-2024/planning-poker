@@ -38,9 +38,9 @@ else
                 <InputText id="IsCompleted" class="form-control" @bind-Value="NewUserStory.IsCompleted" />
             </div>
 
-            <h4>Tasks</h4>
             @foreach (var work in NewUserStory.Works)
             {
+                <h5>New Task</h5>
                 <div class="form-group">
                     <label>Task Title:</label>
                     <InputText class="form-control" @bind-Value="work.Title" />
@@ -49,10 +49,10 @@ else
                     <label>Description:</label>
                     <InputTextArea class="form-control" @bind-Value="work.Description" />
                 </div>
-                <div class="form-group">
+                @*<div class="form-group">
                     <label>Estimation:</label>
                     <InputText class="form-control" @bind-Value="work.Estimation" />
-                </div>
+        </div>*@
             }
             <button type="button" class="btn btn-secondary" @onclick="AddWork">Add Task</button>
 
