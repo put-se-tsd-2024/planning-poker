@@ -52,29 +52,24 @@ else
                             {
                                 <option value="@work.Id">@work.Title</option>
                             }
-                        </select>
-                    </div>
+                    </select>
+                </div>
                 }
-                
-      
+
                 @if (selectedUserStory != null && selectedWork != null)
                 {
-                    <h3>Vote for this task:</h3>
+                    <h4>Vote for User Story <b>@selectedUserStory.Title</b> and Task: <b>@selectedWork.Title</b></h4>
                     <table class="table">
                         <thead>
                             <tr>
-                                <th scope="col">Title</th>
-                                <th scope="col">Task Title</th>
                                 <th scope="col">Description</th>
                                 <th scope="col">Estimation</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                            <td>@selectedUserStory.Title</td>
-                            <td>@selectedWork.Title</td>
-                            <td>@selectedWork.Description</td>
-                            <td>@selectedWork.Estimation</td>
+                                <td>@selectedWork.Description</td>
+                                <td>@selectedWork.Estimation</td>
                             </tr>
                         </tbody>
                     </table>
@@ -187,6 +182,14 @@ else
             StateHasChanged();
         });
 
+        _hubConnection.On<string, string>("UserStorySelected", (userStoryTitle, workTitle) =>
+        {
+            // Find the selected user story and work based on the titles
+            selectedUserStory = userStories.FirstOrDefault(us => us.Title == userStoryTitle);
+            selectedWork = selectedUserStory?.Works.FirstOrDefault(w => w.Title == workTitle);
+            StateHasChanged();
+        });
+
         await _hubConnection.StartAsync();
 
         await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
@@ -243,6 +246,14 @@ else
                 StateHasChanged();
             });
 
+            _hubConnection.On<string, string>("UserStorySelected", (userStoryTitle, workTitle) =>
+            {
+                // Find the selected user story and work based on the titles
+                selectedUserStory = userStories.FirstOrDefault(us => us.Title == userStoryTitle);
+                selectedWork = selectedUserStory?.Works.FirstOrDefault(w => w.Title == workTitle);
+                StateHasChanged();
+            });
+
             await _hubConnection.StartAsync();
 
             await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
@@ -251,16 +262,19 @@ else
         }
     }
 
-    private void SelectUserStory(ChangeEventArgs e)
+    private async Task SelectUserStory(ChangeEventArgs e)
     {
         var selectedId = e.Value.ToString();
         selectedUserStory = userStories.FirstOrDefault(us => us.Id.ToString() == selectedId);
+        selectedWork = null; // Reset selected work
+        await _hubConnection.SendAsync("SelectUserStory", selectedUserStory?.Title, selectedWork?.Title);
     }
 
-    private void SelectWork(ChangeEventArgs e)
+    private async Task SelectWork(ChangeEventArgs e)
     {
         var selectedId = e.Value.ToString();
-        selectedWork = selectedUserStory.Works.FirstOrDefault(us => us.Id.ToString() == selectedId);
+        selectedWork = selectedUserStory?.Works.FirstOrDefault(us => us.Id.ToString() == selectedId);
+        await _hubConnection.SendAsync("SelectUserStory", selectedUserStory?.Title, selectedWork?.Title);
     }
 
     private async Task PlayCardAsync(Card card)

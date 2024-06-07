@@ -147,5 +147,15 @@ namespace PlanningPoker.Server.Hubs
                 await UpdateRoom(userStory.RoomId); // Optional if UpdateRoom impacts the state
             }
         }
+
+        public async Task SelectUserStory(string userStoryTitle, string workTitle)
+        {
+            var roomPlay = _roomPlays.FirstOrDefault(ga => ga.HubConnectionId == Context.ConnectionId);
+
+            if (roomPlay == null)
+                return;
+
+            await Clients.Group(roomPlay.Room.Id).SendAsync("UserStorySelected", userStoryTitle, workTitle);
+        }
     }
 }
