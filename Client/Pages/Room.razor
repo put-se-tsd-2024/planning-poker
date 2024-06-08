@@ -50,7 +50,8 @@ else
                             <option value="">-- Select Task--</option>
                             @foreach (var work in selectedUserStory.Works)
                             {
-                                @if (string.IsNullOrEmpty(work.Estimation)){
+                                @if (string.IsNullOrEmpty(work.Estimation))
+                                {
                                 <option value="@work.Id">@work.Title</option>
                                 }
                             }
@@ -88,6 +89,7 @@ else
                     <tr>
                         <th scope="col">Player</th>
                         <th scope="col">Card Played</th>
+                        <th scope="col">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -104,6 +106,9 @@ else
                                 {
                                     @(roomPlay.HasPlayed ? "Voted" : "")
                                 }
+                            </td>
+                            <td>
+                                <button class="btn btn-danger" @onclick="() => KickPlayerAsync(roomPlay.Player.Name)" disabled="@(roomPlay.Player.Name == StatusManager.Player.Name)">Kick</button>
                             </td>
                         </tr>
                     }
@@ -133,6 +138,13 @@ else
     </div>
 }
 
+@if (kicked)
+{
+    <div class="alert alert-danger" role="alert">
+        You have been kicked from the room.
+    </div>
+}
+
 @code {
     [Parameter]
     public string RoomId { get; set; }
@@ -147,10 +159,12 @@ else
     private UserStory selectedUserStory;
     private Work selectedWork;
     private bool Enter = true;
+    private bool kicked = false;
 
     private void EnterRoom()
     {
         Enter = !Enter;
+        kicked = false;
         OnConnect();
     }
 
@@ -196,6 +210,11 @@ else
             selectedUserStory = userStories.FirstOrDefault(us => us.Title == userStoryTitle);
             selectedWork = selectedUserStory?.Works.FirstOrDefault(w => w.Title == workTitle);
             StateHasChanged();
+        });
+
+        _hubConnection.On<string>("PlayerKicked", async (playerName) =>
+        {
+            await OnPlayerKicked(playerName);
         });
 
         await _hubConnection.StartAsync();
@@ -327,7 +346,33 @@ else
             selectedWork = null;
         }
     }
+    private async Task OnPlayerKicked(string playerName)
+    {
+        var player = _roomPlays.FirstOrDefault(rp => rp.Player.Name == playerName);
+        if (player != null)
+        {
+            _roomPlays = _roomPlays.Where(rp => rp.Player.Name != playerName).ToList();
+            StateHasChanged();
 
+            if (StatusManager.Player.Name == playerName)
+            {
+                kicked = true;
+                Console.WriteLine("kicked:" + kicked);
+                StateHasChanged();
+                kicked = false;
+                Console.WriteLine("kicked:" + kicked);
+                await Task.Delay(3000); // Optional delay to show the message before redirecting
+                NavigationManager.NavigateTo("/");
+                
+            }
+        }
+    }
+
+    private async Task KickPlayerAsync(string playerId)
+    {
+        Console.WriteLine("kicked:" + kicked);
+        await _hubConnection.SendAsync("KickPlayer", RoomId, playerId);
+    }
 
     private string EstimationButtonLabel => showEstimations && HasUserVoted ? "Hide Estimations" : "Reveal Estimations";
     private string ButtonClass => "btn-secondary";

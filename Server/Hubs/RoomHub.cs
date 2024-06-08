@@ -208,5 +208,16 @@ namespace PlanningPoker.Server.Hubs
                 await Clients.Group(userStory.RoomId).SendAsync("WorkUpdated", work);
             }
         }
+
+        public async Task KickPlayer(string roomId, string playerName)
+        {
+            var roomPlay = _roomPlays.FirstOrDefault(rp => rp.Room.Id == roomId && rp.Player.Name == playerName);
+            if (roomPlay != null)
+            {
+                _roomPlays.Remove(roomPlay);
+                await Clients.Group(roomId).SendAsync("PlayerKicked", playerName);
+                await UpdateRoom(roomId);
+            }
+        }
     }
 }
