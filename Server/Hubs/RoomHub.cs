@@ -157,5 +157,36 @@ namespace PlanningPoker.Server.Hubs
 
             await Clients.Group(roomPlay.Room.Id).SendAsync("UserStorySelected", userStoryTitle, workTitle);
         }
+
+        public async Task Vote(string roomId, string userStoryTitle, string workTitle)
+        {
+            // Handle voting logic here
+            await Clients.Group(roomId).SendAsync("VoteReceived", userStoryTitle, workTitle);
+
+            // Calculate and save estimation after voting
+            await CalculateAndSaveEstimation(roomId, userStoryTitle, workTitle);
+        }
+
+        public async Task CalculateAndSaveEstimation(string roomId, string userStoryTitle, string workTitle)
+        {
+            var roomsPlaysForThisRoom = _roomPlays.Where(gp => gp.Room.Id == roomId && int.Parse(gp.CardPlayed.Value) > 0).ToList();
+            if (!roomsPlaysForThisRoom.Any()) return;
+
+            var avgEstimation = roomsPlaysForThisRoom.Average(gp => int.Parse(gp.CardPlayed.Value));
+
+            var userStory = await _context.UserStories
+                .Include(us => us.Works)
+                .Where(us => us.RoomId == roomId && us.Title == userStoryTitle)
+                .FirstOrDefaultAsync();
+
+            var work = userStory?.Works.FirstOrDefault(w => w.Title == workTitle);
+            if (work != null)
+            {
+                work.Estimation = avgEstimation.ToString();
+                await _context.SaveChangesAsync();
+                await Clients.Group(roomId).SendAsync("WorkUpdated", work);
+            }
+        }
+
     }
 }
