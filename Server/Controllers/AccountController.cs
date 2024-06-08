@@ -29,7 +29,7 @@ namespace PlanningPoker.Server.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
-            if (ModelState.IsValid)
+            if (ModelState.IsValid || model.AcceptPolicy)
             {
                 var user = new User { UserName = model.Email, Email = model.Email, Name = model.Name, Surname = model.Surname };
                 var result = await _userManager.CreateAsync(user, model.Password);

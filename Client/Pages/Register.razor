@@ -13,16 +13,24 @@
     <InputText id="name" @bind-Value="registerModel.Name" />
     <InputText id="surname" @bind-Value="registerModel.Surname" />
 
-    <button type="submit">Register</button>
+    <div class="form-group">
+        <label>
+            <InputCheckbox @bind-Value="acceptPolicy" /> I accept the <a href="/privacy-policy">personal data policy</a>.
+        </label>
+        <ValidationMessage For="@(() => acceptPolicy)" />
+    </div>
+
+    <button type="submit" disabled="@(acceptPolicy == false)">Register</button>
 </EditForm>
 
 @code {
     private RegisterModel registerModel = new RegisterModel();
+    private bool acceptPolicy = false;
 
     private async Task HandleRegistration()
     {
         var response = await Http.PostAsJsonAsync("api/account/register", registerModel);
-        if (response.IsSuccessStatusCode)
+        if (response.IsSuccessStatusCode && acceptPolicy)
         {
             NavigationManager.NavigateTo("/login");
         }
