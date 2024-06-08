@@ -50,7 +50,9 @@ else
                             <option value="">-- Select Task--</option>
                             @foreach (var work in selectedUserStory.Works)
                             {
+                                @if (string.IsNullOrEmpty(work.Estimation)){
                                 <option value="@work.Id">@work.Title</option>
+                                }
                             }
                     </select>
                 </div>
@@ -77,7 +79,7 @@ else
             }
         </div>
 
-        <br>
+        <br/>
         @if (_roomPlays.Any())
         {
             <h3>Players</h3>
@@ -115,9 +117,12 @@ else
             }
         </div>
         <br />
-        <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
+        @*<button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
             @EstimationButtonLabel
         </button>
+        <br />*@
+        <button class="btn btn-primary" @onclick="Vote" disabled="@(!CanVote)">
+            @(CanVote ? "Vote" : "Voting in progress...")Vote</button>
         <br />
         <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
         <br />
@@ -254,6 +259,20 @@ else
                 StateHasChanged();
             });
 
+            _hubConnection.On<Work>("WorkUpdated", (updatedWork) =>
+               {
+                   if (selectedUserStory != null && selectedUserStory.Works != null)
+                   {
+                       var work = selectedUserStory.Works.FirstOrDefault(w => w.Id == updatedWork.Id);
+                       if (work != null)
+                       {
+                           work.Estimation = updatedWork.Estimation;
+                           StateHasChanged();
+                       }
+                   }
+               });
+
+
             await _hubConnection.StartAsync();
 
             await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
@@ -292,8 +311,24 @@ else
         await _hubConnection.SendAsync("ShowRoomEstimations", new ShowEstimationsRequest { Room = StatusManager.Room });
     }
 
+    private async Task Vote()
+    {
+        if (selectedUserStory != null && selectedWork != null)
+        {
+            await _hubConnection.SendAsync("ShowRoomEstimations", new ShowEstimationsRequest { Room = StatusManager.Room });
+            await _hubConnection.SendAsync("Vote", RoomId, selectedUserStory.Title, selectedWork.Title);
+
+            // Call the method to calculate and save the estimation
+            await _hubConnection.SendAsync("CalculateAndSaveEstimation", RoomId, selectedUserStory.Title, selectedWork.Title);
+
+            selectedWork = null;
+        }
+    }
+
+
     private string EstimationButtonLabel => showEstimations && HasUserVoted ? "Hide Estimations" : "Reveal Estimations";
     private string ButtonClass => "btn-secondary";
+    private bool CanVote => selectedUserStory != null && selectedWork != null;
 
     private void ValidateRoomState()
     {
