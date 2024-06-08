@@ -187,6 +187,26 @@ namespace PlanningPoker.Server.Hubs
                 await Clients.Group(roomId).SendAsync("WorkUpdated", work);
             }
         }
+        public async Task RevoteAsync(int userStoryId, int workId)
+        {
+            // Find the user story and work by their IDs
+            var userStory = await _context.UserStories
+                .Include(us => us.Works)
+                .FirstOrDefaultAsync(us => us.Id == userStoryId);
 
+            var work = userStory?.Works.FirstOrDefault(w => w.Id == workId);
+
+            if (work != null)
+            {
+                // Reset the estimation to null
+                work.Estimation = null;
+
+                // Save the changes to the database
+                await _context.SaveChangesAsync();
+
+                // Notify all clients in the room that the work item's estimation has been reset
+                await Clients.Group(userStory.RoomId).SendAsync("WorkUpdated", work);
+            }
+        }
     }
 }

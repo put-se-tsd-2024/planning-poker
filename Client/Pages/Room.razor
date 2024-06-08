@@ -124,9 +124,12 @@ else
         <button class="btn btn-primary" @onclick="Vote" disabled="@(!CanVote)">
             @(CanVote ? "Vote" : "Voting in progress...")Vote</button>
         <br />
-        <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
+        <div>
+            <button class="btn btn-primary" @onclick="NavigateToUserStories">Manage User Stories</button>
+            <button class="btn btn-primary" @onclick="NavigateToHistory">Estimation History</button>
+        </div>
         <br />
-        <button class="btn btn-primary" @onclick="NavigateToUserStories">Manage User Stories</button>
+        <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
     </div>
 }
 
@@ -342,7 +345,11 @@ else
     {
         NavigationManager.NavigateTo($"/UserStories/{RoomId}");
     }
-
+    
+    private void NavigateToHistory()
+    {
+        NavigationManager.NavigateTo($"/History/{RoomId}");
+    }
     public void Dispose()
     {
         _ = _hubConnection.DisposeAsync();
