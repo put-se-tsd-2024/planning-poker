@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using PlanningPoker.Client.Services
 @using PlanningPoker.Shared
+@using System.Text
 
 @inject NavigationManager NavigationManager
 @inject RoomStatusManager StatusManager
@@ -12,56 +13,71 @@
 
 @if (StatusManager.Player == null)
 {
-    <h3>FJNSDKLF</h3>
+    <h3>Loading...</h3>
 }
 else
 {
     <div class="container">
         <h3>User Stories</h3>
         <div>Room Id:@StatusManager.Room.Id</div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Title</th>
-                    <th scope="col">Description</th>
-                    <th scope="col">Tasks</th>
-                    <th scope="col">Asigned To</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var userStory in userStories)
-                {
+        <div class="user-stories-container">
+            <table class="table">
+                <thead>
                     <tr>
-                        <td>@userStory.Title</td>
-                        <td>@userStory.Description</td>
-                        <td>@userStory.Tasks</td>
-                        <td>@userStory.AsignedTo</td>
-                        <td>@userStory.IsCompleted</td>
-
-                        <td>
-                            <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
-                            <button class="btn btn-danger" @onclick="() => DeleteUserStory(userStory.Id.ToString())">Delete</button>
-                        </td>
+                        <th scope="col">Title</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Tasks</th>
+                        <th scope="col">Assigned To</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var userStory in userStories)
+                    {
+                        <tr>
+                            <td>@userStory.Title</td>
+                            <td>@userStory.Description</td>
+                            <td>
+                                @foreach (var work in userStory.Works)
+                                {
+                                    <div>@work.Title</div>
+                                    //<div>@work.Description</div>
+                                }
+                            </td>
+                            <td>@userStory.AssignedTo</td>
+                            <td>@userStory.IsCompleted</td>
+                            <td>
+                                <button class="btn btn-primary" @onclick="() => EditUserStory(userStory.Id.ToString())">Edit</button>
+                                <button class="btn btn-danger" @onclick="() => ShowDeleteConfirmation(userStory.Id.ToString())">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
 
+        <button class="btn btn-primary" @onclick=ExportUserStories>Export</button>
+        <InputFile OnChange="HandleFileSelected" />
+        <button class="btn btn-success" @onclick="ImportUserStories">Import</button>
+        <br />
         <button class="btn btn-success" @onclick="CreateUserStory">Create New User Story</button>
         <br />
         <button class="btn btn-primary" @onclick="NavigateToRoom">Back to Room</button>
     </div>
 }
 
+<ConfirmationPopup @ref="confirmationPopup" Message="Are you sure you want to delete this user story?" OnConfirm="HandleDeleteConfirmation" />
+
 @code {
     [Parameter]
-    public string RoomId { get; set; } // is this gonna be safe? "?" if it's null
+    public string RoomId { get; set; }
 
+    private IBrowserFile uploadedFile;
     private List<UserStory> userStories = new List<UserStory>();
-
     private HubConnection hubConnection;
+    private ConfirmationPopup confirmationPopup;
+    private string userStoryIdToDelete;
 
     private void CreateUserStory()
     {
@@ -73,21 +89,141 @@ else
         NavigationManager.NavigateTo($"/UserStories/Edit/{RoomId}/{userStoryId}");
     }
 
+    private void ShowDeleteConfirmation(string userStoryId)
+    {
+        userStoryIdToDelete = userStoryId;
+        confirmationPopup.Show();
+    }
+
+    private async Task HandleDeleteConfirmation(bool isConfirmed)
+    {
+        if (isConfirmed)
+        {
+            await hubConnection.InvokeAsync("DeleteUserStoryAsync", int.Parse(userStoryIdToDelete));
+            userStories.RemoveAll(us => us.Id == int.Parse(userStoryIdToDelete));
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportUserStories()
+    {
+        var csvContent = new StringBuilder();
+        csvContent.AppendLine("Title,Description,WorkTitle,WorkDescription,WorkEstimation,Assignee,Status");
+        foreach (var userStory in userStories)
+        {
+            foreach (var work in userStory.Works)
+            {
+                csvContent.AppendLine($"\"{userStory.Title}\",\"{userStory.Description}\",\"{work.Title}\",\"{work.Description}\",\"{work.Estimation}\",\"{userStory.AssignedTo}\",\"{userStory.IsCompleted}\"");
+            }
+        }
+
+
+        var buffer = Encoding.UTF8.GetBytes(csvContent.ToString());
+        var fileName = "user_story.csv";
+
+        await JsRuntime.InvokeVoidAsync("BlazorDownloadFile.saveAsFile", fileName, Convert.ToBase64String(buffer));
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        uploadedFile = e.File;
+    }
+
+    private async Task ImportUserStories()
+    {
+        if (uploadedFile == null)
+        {
+            return;
+        }
+
+        using (var stream = uploadedFile.OpenReadStream())
+        using (var reader = new StreamReader(stream))
+        {
+            var content = await reader.ReadToEndAsync();
+            var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+            if (lines.Length == 0)
+            {
+                return;
+            }
+
+            var header = lines[0];
+            var columns = header.Split(',');
+
+            var columnIndices = new Dictionary<string, int>();
+            for (int i = 0; i < columns.Length; i++)
+            {
+                columnIndices[columns[i].Trim().Trim('"')] = i;
+            }
+
+            var newStories = new List<UserStory>();
+
+            foreach (var line in lines.Skip(1)) // Skip header row
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                var row = line.Split(',');
+                if (row.Length < columns.Length) continue;
+
+                var title = row[columnIndices["Title"]].Trim().Trim('"');
+                var description = row[columnIndices["Description"]].Trim().Trim('"');
+                var workTitle = row[columnIndices["WorkTitle"]].Trim().Trim('"');
+                var workDescription = row[columnIndices["WorkDescription"]].Trim().Trim('"');
+                var workEstimation = row[columnIndices["WorkEstimation"]].Trim().Trim('"');
+                var assignee = row[columnIndices["Assignee"]].Trim().Trim('"');
+                var status = row[columnIndices["Status"]].Trim().Trim('"');
+
+                var userStory = newStories.FirstOrDefault(us => us.Title == title && us.Description == description);
+                if (userStory == null)
+                {
+                    userStory = new UserStory
+                        {
+                            Title = title,
+                            Description = description,
+                            AssignedTo = assignee,
+                            IsCompleted = status,
+                            RoomId = RoomId,
+                            Works = new List<Work>()
+                        };
+
+                    newStories.Add(userStory);
+                }
+
+                var work = new Work
+                    {
+                        Title = workTitle,
+                        Description = workDescription,
+                        Estimation = workEstimation
+                    };
+
+                userStory.Works.Add(work);
+            }
+
+            foreach (var userStory in newStories)
+            {
+                await hubConnection.InvokeAsync("CreateUserStoryAsync", userStory);
+            }
+
+            await LoadUserStoriesAsync();
+        }
+    }
+
+
+
     private void NavigateToRoom()
     {
         NavigationManager.NavigateTo($"/Room/{RoomId}");
     }
 
-
-    private async Task DeleteUserStory(string userStoryId) //to edit: nothing happens after click the delete button
+    private async Task DeleteUserStory(string userStoryId)
     {
         await hubConnection.InvokeAsync("DeleteUserStoryAsync", int.Parse(userStoryId));
+        userStories.RemoveAll(us => us.Id == int.Parse(userStoryId));
+        StateHasChanged();
     }
-
 
     protected override async Task OnInitializedAsync()
     {
-        System.Diagnostics.Debug.WriteLine("asdasd " + RoomId);
         if (string.IsNullOrEmpty(RoomId))
         {
             NavigationManager.NavigateTo("/");
@@ -98,21 +234,47 @@ else
             .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
             .Build();
 
-        await hubConnection.StartAsync();
+        hubConnection.On<UserStory>("UserStoryCreated", HandleUserStoryCreated);
         hubConnection.On<int>("UserStoryDeleted", HandleUserStoryDeleted);
+        hubConnection.On<UserStory>("UserStoryUpdated", HandleUserStoryUpdated);
 
-        userStories = await hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
+        await hubConnection.StartAsync();
+
+        await LoadUserStoriesAsync();
     }
 
+    private async Task LoadUserStoriesAsync()
+    {
+        userStories = await hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
+        StateHasChanged();
+    }
+
+    private void HandleUserStoryCreated(UserStory userStory)
+    {
+        userStories.Add(userStory);
+        StateHasChanged();
+    }
 
     private void HandleUserStoryDeleted(int userStoryId)
     {
-        JsRuntime.InvokeVoidAsync("console.log", "Received UserStoryDeleted event for user story:", userStoryId);
-        userStories.RemoveAll(us => us.Id == userStoryId);
-        StateHasChanged(); // Notify Blazor that the state has changed and the UI needs to be updated
+        var story = userStories.FirstOrDefault(us => us.Id == userStoryId);
+        if (story != null)
+        {
+            userStories.Remove(story);
+            StateHasChanged();
+        }
     }
 
-
+    private void HandleUserStoryUpdated(UserStory updatedUserStory)
+    {
+        var story = userStories.FirstOrDefault(us => us.Id == updatedUserStory.Id);
+        if (story != null)
+        {
+            var index = userStories.IndexOf(story);
+            userStories[index] = updatedUserStory;
+            StateHasChanged();
+        }
+    }
 
     public void Dispose()
     {

@@ -8,125 +8,151 @@
 @inject RoomStatusManager StatusManager
 @implements IDisposable
 @inject IJSRuntime JSRuntime
-@if (!Enter){
+
+@if (!Enter)
+{
     <div class="container">
-        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name"/>
-        <br/>
+        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name" />
+        <br />
         <button type="button" class="btn btn-secondary" @onclick="() => EnterRoom()" disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))">Enter Room</button>
         <br />
     </div>
 }
-else{
-<div class="container room">
-    <h2>Room ID:@StatusManager.Room.Id</h2>
-    <p class="link" @onclick="CopyText">Copy invitation link</p>
+else
+{
+    <div class="container room">
+        <h2>Room ID:@StatusManager.Room.Id</h2>
+        <p class="link" @onclick="CopyText">Copy invitation link</p>
 
-        <div class="user-stories">
+        <div class="user-stories-container">
             @if (userStories == null || userStories.Count == 0)
             {
+                <p>No user stories available.</p>
             }
             else
             {
-                <h3>User Stories</h3>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th scope="col">Title</th>
-                            <th scope="col">Description</th>
-                            <th scope="col">Tasks</th>
-                            <th scope="col">Assigned To</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <h4>Select a User Story</h4>
+                <div class="dropdown-container">
+                    <select @onchange="SelectUserStory">
+                        <option value="">-- Select User Story--</option>
                         @foreach (var userStory in userStories)
                         {
-                            <tr>
-                                <td>@userStory.Title</td>
-                                <td>@userStory.Description</td>
-                                <td>@userStory.Tasks</td>
-                                <td>@userStory.AsignedTo</td>
-                            </tr>
+                            <option value="@userStory.Id">@userStory.Title</option>
                         }
-                    </tbody>
-                </table>
+                    </select>
+                </div>
+
+                @if (selectedUserStory != null)
+                {
+                    <h4>Select a Task</h4>
+                    <div class="dropdown-container">
+                        <select @onchange="SelectWork">
+                            <option value="">-- Select Task--</option>
+                            @foreach (var work in selectedUserStory.Works)
+                            {
+                                <option value="@work.Id">@work.Title</option>
+                            }
+                    </select>
+                </div>
+                }
+
+                @if (selectedUserStory != null && selectedWork != null)
+                {
+                    <h4>Vote for User Story <b>@selectedUserStory.Title</b> and Task: <b>@selectedWork.Title</b></h4>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Description</th>
+                                <th scope="col">Estimation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>@selectedWork.Description</td>
+                                <td>@selectedWork.Estimation</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                }
             }
         </div>
 
-    <div class="card-deck">
-        @foreach (var card in FibonacciDeck.Deck.Cards)
+        <br>
+        @if (_roomPlays.Any())
         {
-            <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
-        }
-    </div>
-    <br>
-    @if (_roomPlays.Any())
-    {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Player</th>
-                    <th scope="col">Card Played</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var roomPlay in _roomPlays)
-                {
+            <h3>Players</h3>
+            <table class="table">
+                <thead>
                     <tr>
-                        <th scope="row">@roomPlay.Player.Name</th>
-                        <td>
-                                @if (showEstimations || AllVoted)
-                            {
-                                @roomPlay.CardPlayed.Text
-                            }
-                            else
-                            {
-                                @(roomPlay.HasPlayed ? "Voted" : "")
-                            }
-                        </td>
+                        <th scope="col">Player</th>
+                        <th scope="col">Card Played</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var roomPlay in _roomPlays)
+                    {
+                        <tr>
+                            <th scope="row">@roomPlay.Player.Name</th>
+                            <td>
+                                @if (showEstimations || AllVoted)
+                                {
+                                    @roomPlay.CardPlayed.Text
+                                }
+                                else
+                                {
+                                    @(roomPlay.HasPlayed ? "Voted" : "")
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        <div class="card-deck">
+            @foreach (var card in FibonacciDeck.Deck.Cards)
+            {
+                <DeckCard Card="card" OnCardClicked="PlayCardAsync"></DeckCard>
+            }
+        </div>
         <br />
         <button class="btn @ButtonClass" @onclick="ShowRoomEstimations" disabled="@(!HasUserVoted)">
             @EstimationButtonLabel
         </button>
         <br />
-    }
-
         <button class="btn btn-primary btn-spring-green" @onclick="ResetRoom">Reset Room</button>
-        <br /><br />
+        <br />
         <button class="btn btn-primary" @onclick="NavigateToUserStories">Manage User Stories</button>
-</div>}
+    </div>
+}
 
 @code {
-
     [Parameter]
-    public string RoomId { get; set; }    
+    public string RoomId { get; set; }
 
     private HubConnection _hubConnection;
     private IEnumerable<RoomPlay> _roomPlays = new List<RoomPlay>();
     private bool showEstimations => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.ShowEstimations);
     private bool HasUserVoted => _roomPlays.Any(rp => rp.Player.Name == StatusManager.Player.Name && rp.HasPlayed);
-    private bool AllVoted => _roomPlays.All(rp =>  rp.HasPlayed);
+    private bool AllVoted => _roomPlays.All(rp => rp.HasPlayed);
 
-    private List<UserStory> userStories;
-    
+    private List<UserStory> userStories = new List<UserStory>();
+    private UserStory selectedUserStory;
+    private Work selectedWork;
     private bool Enter = true;
 
     private void EnterRoom()
     {
         Enter = !Enter;
         OnConnect();
-    }    
+    }
 
     private async Task OnConnect()
     {
         ValidateRoomState();
 
         _hubConnection = new HubConnectionBuilder()
-        .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
-        .Build();
+            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+            .Build();
 
         _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
         {
@@ -134,31 +160,63 @@ else{
             StateHasChanged();
         });
 
+        _hubConnection.On<UserStory>("UserStoryCreated", (userStory) =>
+        {
+            userStories.Add(userStory);
+            StateHasChanged();
+        });
+
+        _hubConnection.On<int>("UserStoryDeleted", (userStoryId) =>
+        {
+            userStories.RemoveAll(us => us.Id == userStoryId);
+            StateHasChanged();
+        });
+
+        _hubConnection.On<UserStory>("UserStoryUpdated", (updatedUserStory) =>
+        {
+            var index = userStories.FindIndex(us => us.Id == updatedUserStory.Id);
+            if (index >= 0)
+            {
+                userStories[index] = updatedUserStory;
+            }
+            StateHasChanged();
+        });
+
+        _hubConnection.On<string, string>("UserStorySelected", (userStoryTitle, workTitle) =>
+        {
+            // Find the selected user story and work based on the titles
+            selectedUserStory = userStories.FirstOrDefault(us => us.Title == userStoryTitle);
+            selectedWork = selectedUserStory?.Works.FirstOrDefault(w => w.Title == workTitle);
+            StateHasChanged();
+        });
+
         await _hubConnection.StartAsync();
 
         await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+
+        userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
     }
 
     protected override async Task OnInitializedAsync()
     {
-        System.Diagnostics.Debug.WriteLine("asdasd "+RoomId);
+        System.Diagnostics.Debug.WriteLine("asdasd " + RoomId);
         if (string.IsNullOrEmpty(RoomId))
         {
-            NavigationManager.NavigateTo("/"); 
+            NavigationManager.NavigateTo("/");
             return;
         }
         if (!StatusManager.IsStatusReady)
         {
             StatusManager.Room.Id = RoomId;
-            Enter=false;
+            Enter = false;
         }
         if (Enter)
         {
             ValidateRoomState();
 
             _hubConnection = new HubConnectionBuilder()
-            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
-            .Build();
+                .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+                .Build();
 
             _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
             {
@@ -166,11 +224,57 @@ else{
                 StateHasChanged();
             });
 
+            _hubConnection.On<UserStory>("UserStoryCreated", (userStory) =>
+            {
+                userStories.Add(userStory);
+                StateHasChanged();
+            });
+
+            _hubConnection.On<int>("UserStoryDeleted", (userStoryId) =>
+            {
+                userStories.RemoveAll(us => us.Id == userStoryId);
+                StateHasChanged();
+            });
+
+            _hubConnection.On<UserStory>("UserStoryUpdated", (updatedUserStory) =>
+            {
+                var index = userStories.FindIndex(us => us.Id == updatedUserStory.Id);
+                if (index >= 0)
+                {
+                    userStories[index] = updatedUserStory;
+                }
+                StateHasChanged();
+            });
+
+            _hubConnection.On<string, string>("UserStorySelected", (userStoryTitle, workTitle) =>
+            {
+                // Find the selected user story and work based on the titles
+                selectedUserStory = userStories.FirstOrDefault(us => us.Title == userStoryTitle);
+                selectedWork = selectedUserStory?.Works.FirstOrDefault(w => w.Title == workTitle);
+                StateHasChanged();
+            });
+
             await _hubConnection.StartAsync();
 
             await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+
             userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
         }
+    }
+
+    private async Task SelectUserStory(ChangeEventArgs e)
+    {
+        var selectedId = e.Value.ToString();
+        selectedUserStory = userStories.FirstOrDefault(us => us.Id.ToString() == selectedId);
+        selectedWork = null; // Reset selected work
+        await _hubConnection.SendAsync("SelectUserStory", selectedUserStory?.Title, selectedWork?.Title);
+    }
+
+    private async Task SelectWork(ChangeEventArgs e)
+    {
+        var selectedId = e.Value.ToString();
+        selectedWork = selectedUserStory?.Works.FirstOrDefault(us => us.Id.ToString() == selectedId);
+        await _hubConnection.SendAsync("SelectUserStory", selectedUserStory?.Title, selectedWork?.Title);
     }
 
     private async Task PlayCardAsync(Card card)

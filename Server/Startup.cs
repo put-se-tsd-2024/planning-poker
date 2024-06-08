@@ -11,6 +11,12 @@ using Microsoft.EntityFrameworkCore;
 using PlanningPoker.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using PlanningPoker.Server.Data;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
+using PlanningPoker.Shared;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace PlanningPoker.Server
 {
@@ -27,7 +33,12 @@ namespace PlanningPoker.Server
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSignalR();
+            services.AddSignalR(options =>
+            {
+                options.MaximumReceiveMessageSize = 1024 * 1024 * 5; // Adjust limit as needed (in bytes)
+            });
+
+
             services.AddControllersWithViews();
             services.AddRazorPages();
             services.AddResponseCompression(opts =>
@@ -37,6 +48,29 @@ namespace PlanningPoker.Server
             });
             services.AddDbContext<MyDbContext>(options =>
                  options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddIdentity<User, IdentityRole>()
+                .AddEntityFrameworkStores<MyDbContext>()
+                .AddDefaultTokenProviders();
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Configuration["Jwt:Issuer"],
+                    ValidAudience = Configuration["Jwt:Issuer"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                };
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -61,6 +95,9 @@ namespace PlanningPoker.Server
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
