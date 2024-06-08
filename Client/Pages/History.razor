@@ -1,0 +1,115 @@
+﻿@page "/History/{RoomId}"
+
+@using Microsoft.AspNetCore.SignalR.Client
+@using PlanningPoker.Client.Services
+@using PlanningPoker.Shared
+
+@inject NavigationManager NavigationManager
+@inject RoomStatusManager StatusManager
+
+@if (!HasLoaded)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <h3>User Story History for Room: @StatusManager.Room.Id</h3>
+        <div class="user-stories-container">
+            @if (userStories == null || userStories.Count == 0)
+            {
+                <p>No user stories available.</p>
+            }
+            else
+            {
+                <div class="user-stories-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">User Story Title</th>
+                                <th scope="col">Task Title</th>
+                                <th scope="col">Task Description</th>
+                                <th scope="col">Estimation</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var userStory in userStories)
+                            {
+                                @foreach (var work in userStory.Works)
+                                {
+                                    if(work.Estimation != null)
+                                    {
+                                        <tr>
+                                            <td>@userStory.Title</td>
+                                            <td>@work.Title</td>
+                                            <td>@work.Description</td
+                                            <td>@work.Estimation</td>
+                                            <td>
+                                                <button class="btn btn-primary" @onclick="@(() => Revote(userStory.Id, work.Id))">REVOTE</button>
+                                            </td>
+                                    </tr>
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td>@userStory.Title</td>
+                                            <td>@work.Title</td>
+                                            <td>@work.Description</td>
+                                            <td>Not Voted</td>
+                                            <td>
+                                                <button class="btn btn-primary" disabled>REVOTE</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    <button class="btn btn-primary" @onclick="NavigateToRoom">Back to Room</button>
+}
+
+@code {
+    [Parameter]
+    public string RoomId { get; set; }
+
+    private HubConnection hubConnection;
+    private List<UserStory> userStories = new List<UserStory>();
+    private bool HasLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(RoomId))
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+            .Build();
+
+        await hubConnection.StartAsync();
+
+        userStories = await hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
+        HasLoaded = true;
+    }
+
+    private async Task Revote(int userStoryId, int workId)
+    {
+        await hubConnection.SendAsync("RevoteAsync", userStoryId, workId);
+        NavigationManager.NavigateTo($"/Room/{RoomId}");
+    }
+
+    private void NavigateToRoom()
+    {
+        NavigationManager.NavigateTo($"/Room/{RoomId}");
+    }
+
+    public void Dispose()
+    {
+        _ = hubConnection.DisposeAsync();
+    }
+}
