@@ -1,8 +1,9 @@
-This is a simple planning poker application made with the usage of Blazor framework.
+This is a planning poker application made with the usage of Blazor framework.
 
-The project is not released yet, so to run the project in exsisting state:
+To run the project:
 1) go to ../Server/ folder 
 2) execute "dotnet run" command
 
+The application is available here:
 https://planningpokerapp.azurewebsites.net/
  
