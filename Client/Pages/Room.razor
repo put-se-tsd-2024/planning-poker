@@ -368,9 +368,13 @@ else
         NavigationManager.NavigateTo($"/History/{RoomId}");
     }
     public void Dispose()
+{
+    if (_hubConnection != null)
     {
         _ = _hubConnection.DisposeAsync();
     }
+}
+
 
     async Task CopyText()
     {
