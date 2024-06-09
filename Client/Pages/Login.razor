@@ -1,9 +1,13 @@
 ﻿@page "/login"
 @inject NavigationManager NavigationManager
 @inject HttpClient Http
+@inject AuthService AuthService
 
+@using Microsoft.AspNetCore.Components.Authorization
+@using PlanningPoker.Client.Services
 @using PlanningPoker.Shared
 @using System.Net.Http.Json
+@using System.Net.Http.Headers
 
 <div class="container">
     <h1>Sign In</h1>
@@ -50,6 +54,7 @@
             var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
             if (tokenResponse != null)
             {
+                await AuthService.Login(tokenResponse.Token);
                 NavigationManager.NavigateTo("/");
             }
         }
