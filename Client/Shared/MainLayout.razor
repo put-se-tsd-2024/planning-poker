@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
 <head>
     <link rel="icon" type="image/x-icon" href="~/favicon.ico">
 </head>
@@ -7,6 +9,10 @@
     <a href="/">
         <img src="logo.svg" alt="Logo" class="logo" />
     </a>
+    <div class="auth-control">
+        <button type="button" class="btn btn-primary btn-spring-green" @onclick="Login">Sign In</button>
+        <button type="button" class="btn btn-primary btn-spring-green" @onclick="Register">Sign Up</button>
+    </div>
 </div>
 <div class="main-container">
     <main>
@@ -14,3 +20,14 @@
     </main>
 </div>
 
+@code {
+    private void Login()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private void Register()
+    {
+        NavigationManager.NavigateTo("/register");
+    }
+}

@@ -4,15 +4,28 @@
 
 @using PlanningPoker.Shared
 
-<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<div class="container">
+    <h1>Sign In</h1>
+    <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
 
-    <InputText id="email" @bind-Value="loginModel.Email" />
-    <InputText id="password" @bind-Value="loginModel.Password" />
+        <div class="form-group">
+            <label for="email">Email</label>
+            <InputText id="email" class="form-control" @bind-Value="loginModel.Email" placeholder="Enter your email" />
+            <ValidationMessage For="@(() => loginModel.Email)" class="validation-message" />
+        </div>
 
-    <button type="submit">Login</button>
-</EditForm>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="Enter your password" />
+            <ValidationMessage For="@(() => loginModel.Password)" class="validation-message" />
+        </div>
+
+
+        <button type="submit" class="btn btn-primary btn-spring-green">Sign In</button>
+    </EditForm>
+</div>
 
 @code {
     private LoginModel loginModel = new LoginModel();
@@ -32,4 +45,3 @@
         }
     }
 }
-
