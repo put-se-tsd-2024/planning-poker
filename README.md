@@ -5,3 +5,4 @@ The project is not released yet, so to run the project in exsisting state:
 2) execute "dotnet run" command
 
 https://planningpokerapp.azurewebsites.net/
+ 
