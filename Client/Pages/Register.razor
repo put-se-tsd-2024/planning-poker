@@ -3,12 +3,12 @@
 @inject HttpClient Http
 
 @using PlanningPoker.Shared
+@using System.Net.Http.Json
 
 <div class="container">
     <h1>Register</h1>
     <EditForm Model="registerModel" OnValidSubmit="HandleRegistration">
         <DataAnnotationsValidator />
-        <ValidationSummary />
 
         <div class="form-group">
             <label for="email">Email</label>
@@ -20,6 +20,12 @@
             <label for="password">Password</label>
             <InputText id="password" type="password" class="form-control" @bind-Value="registerModel.Password" placeholder="Enter your password" />
             <ValidationMessage For="@(() => registerModel.Password)" class="validation-message" />
+        </div>
+
+        <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <InputText id="confirmPassword" type="password" class="form-control" @bind-Value="registerModel.ConfirmPassword" placeholder="Repeat your password" />
+            <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="validation-message" />
         </div>
 
         <div class="form-group">
@@ -43,14 +49,27 @@
 
         <button type="submit" class="btn btn-primary btn-spring-green" disabled="@(acceptPolicy == false)">Register</button>
     </EditForm>
+
+    @if (errorMessages != null && errorMessages.Count > 0)
+    {
+        <ul class="validation-summary">
+            @foreach (var error in errorMessages)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    }
 </div>
 
 @code {
     private RegisterModel registerModel = new RegisterModel();
     private bool acceptPolicy = false;
+    private List<string> errorMessages = new List<string>();
 
     private async Task HandleRegistration()
     {
+        errorMessages.Clear();
+
         var response = await Http.PostAsJsonAsync("api/account/register", registerModel);
         if (response.IsSuccessStatusCode && acceptPolicy)
         {
@@ -58,7 +77,24 @@
         }
         else
         {
-            // Handle errors
+            var result = await response.Content.ReadFromJsonAsync<List<ErrorResponse>>();
+            if (result != null)
+            {
+                foreach (var error in result)
+                {
+                    errorMessages.Add(error.Description);
+                }
+            }
+            else
+            {
+                errorMessages.Add("An unknown error occurred.");
+            }
         }
+    }
+
+    private class ErrorResponse
+    {
+        public string Code { get; set; }
+        public string Description { get; set; }
     }
 }

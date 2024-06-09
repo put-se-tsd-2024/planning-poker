@@ -3,12 +3,12 @@
 @inject HttpClient Http
 
 @using PlanningPoker.Shared
+@using System.Net.Http.Json
 
 <div class="container">
     <h1>Sign In</h1>
     <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
         <DataAnnotationsValidator />
-        <ValidationSummary />
 
         <div class="form-group">
             <label for="email">Email</label>
@@ -22,26 +22,81 @@
             <ValidationMessage For="@(() => loginModel.Password)" class="validation-message" />
         </div>
 
-
         <button type="submit" class="btn btn-primary btn-spring-green">Sign In</button>
     </EditForm>
+
+    @if (errorMessages != null && errorMessages.Count > 0)
+    {
+        <ul class="validation-summary">
+            @foreach (var error in errorMessages)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    }
 </div>
 
 @code {
     private LoginModel loginModel = new LoginModel();
+    private List<string> errorMessages = new List<string>();
 
     private async Task HandleLogin()
     {
+        errorMessages.Clear();
+
         var response = await Http.PostAsJsonAsync("api/account/login", loginModel);
         if (response.IsSuccessStatusCode)
         {
-            var token = await response.Content.ReadAsStringAsync();
-            // Store the token and use it for authenticated requests
-            NavigationManager.NavigateTo("/");
+            var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
+            if (tokenResponse != null)
+            {
+                NavigationManager.NavigateTo("/");
+            }
         }
         else
         {
-            // Handle errors
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetailsResponse>();
+                if (problemDetails != null)
+                {
+                    errorMessages.Add(problemDetails.Title);
+                }
+            }
+            else
+            {
+                var result = await response.Content.ReadFromJsonAsync<List<ErrorResponse>>();
+                if (result != null)
+                {
+                    foreach (var error in result)
+                    {
+                        errorMessages.Add(error.Description);
+                    }
+                }
+                else
+                {
+                    errorMessages.Add("An unknown error occurred.");
+                }
+            }
         }
+    }
+
+    private class TokenResponse
+    {
+        public string Token { get; set; }
+    }
+
+    private class ErrorResponse
+    {
+        public string Code { get; set; }
+        public string Description { get; set; }
+    }
+
+    private class ProblemDetailsResponse
+    {
+        public string Type { get; set; }
+        public string Title { get; set; }
+        public int Status { get; set; }
+        public string TraceId { get; set; }
     }
 }
