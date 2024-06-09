@@ -1,17 +1,25 @@
 ﻿@page "/"
+@inject AuthService AuthService
+@inject HttpClient Http
+
 @using PlanningPoker.Client.Services
 @using PlanningPoker.Shared
+@using System.Net.Http.Headers
+@using System.Security.Claims
 
 @inject NavigationManager NavigationManager
 @inject RoomStatusManager StatusManager
 @inject IJSRuntime JsRuntime
-<PageTitle>Home</PageTitle>
 
+<PageTitle>Home</PageTitle>
 
 <div class="container">
     <h1>Welcome to Planning Poker!</h1>
+
+    <h3>Name</h3>
     <div class="input-group">
-        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Your Name" />
+        
+        <input  type="text" class="form-control" @bind="StatusManager.Player.Name" placeholder="@StatusManager.Player.Name"/>
         <button type="button" class="btn btn-primary btn-spring-green" @onclick="Start" disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))">Create Room</button>
     </div>
     <br />
@@ -21,31 +29,29 @@
     </div>
 </div>
 
-
 @code {
+    private string userName;
     private RoomType _roomType = RoomType.None;
 
     private void InitNewRoom()
     {
         var random = new Random();
-
         _roomType = RoomType.New;
-        StatusManager.Room.Id = random.Next(1000,9999).ToString();
+        StatusManager.Room.Id = random.Next(1000, 9999).ToString();
     }
 
     private void JoinExistingRoom()
     {
         _roomType = RoomType.Existing;
-        NavigationManager.NavigateTo("/Room/"+StatusManager.Room.Id);
-        
+        NavigationManager.NavigateTo("/Room/" + StatusManager.Room.Id);
     }
 
     private void Start()
     {
         var random = new Random();
         _roomType = RoomType.New;
-        StatusManager.Room.Id = random.Next(1000,9999).ToString();
-        NavigationManager.NavigateTo(StatusManager.GetRoomUrl(NavigationManager));  
+        StatusManager.Room.Id = random.Next(1000, 9999).ToString();
+        NavigationManager.NavigateTo(StatusManager.GetRoomUrl(NavigationManager));
     }
 
     private enum RoomType
@@ -53,5 +59,20 @@
         None,
         New,
         Existing
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await AuthService.GetToken();
+        if (string.IsNullOrEmpty(token))
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            var claims = JwtParser.ParseClaimsFromJwt(token);
+            userName = claims.FirstOrDefault(c => c.Type == "name")?.Value;
+            StatusManager.Player.Name = userName;
+        }
     }
 }

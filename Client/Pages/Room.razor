@@ -1,5 +1,9 @@
 ﻿@page "/Room/{RoomId}"
+@inject AuthService AuthService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject HttpClient Http
 
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.SignalR.Client
 @using PlanningPoker.Client.Services
 @using PlanningPoker.Shared
@@ -12,7 +16,7 @@
 @if (!Enter)
 {
     <div class="container">
-        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="Enter name" />
+        <input type="text" class="form-control" @bind="StatusManager.Player.Name" @bind:event="oninput" placeholder="@StatusManager.Player.Name" />
         <br />
         <button type="button" class="btn btn-secondary" @onclick="() => EnterRoom()" disabled="@(string.IsNullOrWhiteSpace(StatusManager.Player.Name))">Enter Room</button>
         <br />
@@ -136,6 +140,7 @@ else
 @code {
     [Parameter]
     public string RoomId { get; set; }
+    private string userName;
 
     private HubConnection _hubConnection;
     private IEnumerable<RoomPlay> _roomPlays = new List<RoomPlay>();
@@ -207,80 +212,92 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        System.Diagnostics.Debug.WriteLine("asdasd " + RoomId);
-        if (string.IsNullOrEmpty(RoomId))
+        var token = await AuthService.GetToken();
+        if (string.IsNullOrEmpty(token))
         {
-            NavigationManager.NavigateTo("/");
-            return;
+           NavigationManager.NavigateTo("/login");
         }
-        if (!StatusManager.IsStatusReady)
+        else
         {
-            StatusManager.Room.Id = RoomId;
-            Enter = false;
-        }
-        if (Enter)
-        {
-            ValidateRoomState();
+            var claims = JwtParser.ParseClaimsFromJwt(token);
+            userName = claims.FirstOrDefault(c => c.Type == "name")?.Value;
+            StatusManager.Player.Name = userName;
 
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
-                .Build();
-
-            _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
+            System.Diagnostics.Debug.WriteLine("asdasd " + RoomId);
+            if (string.IsNullOrEmpty(RoomId))
             {
-                _roomPlays = roomPlays;
-                StateHasChanged();
-            });
-
-            _hubConnection.On<UserStory>("UserStoryCreated", (userStory) =>
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+            if (!StatusManager.IsStatusReady)
             {
-                userStories.Add(userStory);
-                StateHasChanged();
-            });
-
-            _hubConnection.On<int>("UserStoryDeleted", (userStoryId) =>
+                StatusManager.Room.Id = RoomId;
+                Enter = false;
+            }
+            if (Enter)
             {
-                userStories.RemoveAll(us => us.Id == userStoryId);
-                StateHasChanged();
-            });
+                ValidateRoomState();
 
-            _hubConnection.On<UserStory>("UserStoryUpdated", (updatedUserStory) =>
-            {
-                var index = userStories.FindIndex(us => us.Id == updatedUserStory.Id);
-                if (index >= 0)
+                _hubConnection = new HubConnectionBuilder()
+                    .WithUrl(NavigationManager.ToAbsoluteUri($"/RoomHub?RoomId={RoomId}"))
+                    .Build();
+
+                _hubConnection.On<IEnumerable<RoomPlay>>("UpdateRoom", (IEnumerable<RoomPlay> roomPlays) =>
                 {
-                    userStories[index] = updatedUserStory;
-                }
-                StateHasChanged();
-            });
+                    _roomPlays = roomPlays;
+                    StateHasChanged();
+                });
 
-            _hubConnection.On<string, string>("UserStorySelected", (userStoryTitle, workTitle) =>
-            {
-                // Find the selected user story and work based on the titles
-                selectedUserStory = userStories.FirstOrDefault(us => us.Title == userStoryTitle);
-                selectedWork = selectedUserStory?.Works.FirstOrDefault(w => w.Title == workTitle);
-                StateHasChanged();
-            });
+                _hubConnection.On<UserStory>("UserStoryCreated", (userStory) =>
+                {
+                    userStories.Add(userStory);
+                    StateHasChanged();
+                });
 
-            _hubConnection.On<Work>("WorkUpdated", (updatedWork) =>
-               {
-                   if (selectedUserStory != null && selectedUserStory.Works != null)
-                   {
-                       var work = selectedUserStory.Works.FirstOrDefault(w => w.Id == updatedWork.Id);
-                       if (work != null)
-                       {
-                           work.Estimation = updatedWork.Estimation;
-                           StateHasChanged();
-                       }
-                   }
-               });
+                _hubConnection.On<int>("UserStoryDeleted", (userStoryId) =>
+                {
+                    userStories.RemoveAll(us => us.Id == userStoryId);
+                    StateHasChanged();
+                });
+
+                _hubConnection.On<UserStory>("UserStoryUpdated", (updatedUserStory) =>
+                {
+                    var index = userStories.FindIndex(us => us.Id == updatedUserStory.Id);
+                    if (index >= 0)
+                    {
+                        userStories[index] = updatedUserStory;
+                    }
+                    StateHasChanged();
+                });
+
+                _hubConnection.On<string, string>("UserStorySelected", (userStoryTitle, workTitle) =>
+                {
+                    // Find the selected user story and work based on the titles
+                    selectedUserStory = userStories.FirstOrDefault(us => us.Title == userStoryTitle);
+                    selectedWork = selectedUserStory?.Works.FirstOrDefault(w => w.Title == workTitle);
+                    StateHasChanged();
+                });
+
+                _hubConnection.On<Work>("WorkUpdated", (updatedWork) =>
+                {
+                    if (selectedUserStory != null && selectedUserStory.Works != null)
+                    {
+                        var work = selectedUserStory.Works.FirstOrDefault(w => w.Id == updatedWork.Id);
+                        if (work != null)
+                        {
+                            work.Estimation = updatedWork.Estimation;
+                            StateHasChanged();
+                        }
+                    }
+                });
 
 
-            await _hubConnection.StartAsync();
+                await _hubConnection.StartAsync();
 
-            await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
+                await _hubConnection.SendAsync("RegisterPlayerAsync", new RegisterPlayerRequest { Player = StatusManager.Player, Room = StatusManager.Room });
 
-            userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
+                userStories = await _hubConnection.InvokeAsync<List<UserStory>>("GetUserStoriesAsync", RoomId);
+            }
         }
     }
 

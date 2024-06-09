@@ -1,4 +1,6 @@
-﻿@inherits LayoutComponentBase
+﻿@using PlanningPoker.Client.Services
+@inherits LayoutComponentBase
+@inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
 <head>
@@ -10,8 +12,15 @@
         <img src="logo.svg" alt="Logo" class="logo" />
     </a>
     <div class="auth-control">
-        <button type="button" class="btn btn-primary btn-spring-green" @onclick="Login">Sign In</button>
-        <button type="button" class="btn btn-primary btn-spring-green" @onclick="Register">Sign Up</button>
+        @if (isAuthenticated)
+        {
+            <button type="button" class="btn btn-primary btn-spring-green" @onclick="Logout">Log out</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-primary btn-spring-green" @onclick="Login">Sign In</button>
+            <button type="button" class="btn btn-primary btn-spring-green" @onclick="Register">Sign Up</button>
+        }
     </div>
 </div>
 <div class="main-container">
@@ -21,6 +30,25 @@
 </div>
 
 @code {
+    private bool isAuthenticated;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthService.OnChange += AuthStateChanged;
+        await UpdateAuthState();
+    }
+
+    private async Task UpdateAuthState()
+    {
+        isAuthenticated = await AuthService.GetToken() != null;
+        StateHasChanged();
+    }
+
+    private void AuthStateChanged()
+    {
+        InvokeAsync(UpdateAuthState);
+    }
+
     private void Login()
     {
         NavigationManager.NavigateTo("/login");
@@ -29,5 +57,17 @@
     private void Register()
     {
         NavigationManager.NavigateTo("/register");
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.Logout();
+        await UpdateAuthState();
+        NavigationManager.NavigateTo("/login");
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnChange -= AuthStateChanged;
     }
 }
